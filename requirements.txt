@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+motor
+beanie
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+web3
+requests
+qrcode[pil]
+Pillow
+transformers
+torch
+python-dotenv
+pydantic-settings
+email-validator
