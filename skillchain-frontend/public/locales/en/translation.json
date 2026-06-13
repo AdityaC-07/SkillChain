@@ -1,0 +1,8 @@
+{
+  "nav": { "home": "Get Certified", "verify": "Verify", "login": "Login", "dashboard": "Dashboard" },
+  "hero": { "title": "Your Skills. Verified Forever.", "subtitle": "Issue blockchain-backed vocational certificates.", "cta_certify": "Get Certified", "cta_verify": "Verify Now" },
+  "verify": { "title": "Verify Certificate", "placeholder": "Paste Certificate ID or scan QR", "button": "Verify" },
+  "issue": { "step1": "Learner Details", "step2": "Certificate Details", "step3": "Upload & Preview", "mint_button": "Mint Certificate" },
+  "fraud": { "upload": "Upload certificate image", "analyze": "Analyze Certificate", "verdict": { "genuine": "GENUINE", "suspicious": "SUSPICIOUS", "fake": "FAKE" } },
+  "dashboard": { "total_issued": "Total Issued", "verified_today": "Verified Today", "fraud_caught": "Fraud Caught" }
+}

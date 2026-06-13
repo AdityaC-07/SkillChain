@@ -14,6 +14,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import init_db
 from app.routers import analytics, auth, certificates, digilocker, fraud
 from app.services import fraud_service
+from app.middleware.request_logger import RequestLoggerMiddleware
+from app.middleware.rate_limiter import RateLimiterMiddleware
+from app.middleware.error_handler import register_exception_handlers
+
+# Register middleware and exception handlers
 
 
 @asynccontextmanager
@@ -25,6 +30,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="SkillChain API", version="1.0.0", lifespan=lifespan)
+
+# Attach middleware
+app.add_middleware(RequestLoggerMiddleware)
+app.add_middleware(RateLimiterMiddleware)
+
+# Attach exception handlers
+register_exception_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,

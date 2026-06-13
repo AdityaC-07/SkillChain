@@ -7,6 +7,8 @@ from app.core.config import settings
 from app.models.audit_log import AuditLog
 from app.models.certificate import Certificate
 from app.models.user import User
+from app.models.fraud_alert import FraudAlert
+from app.models.digilocker_sync import DigiLockerSync
 
 _client: AsyncIOMotorClient | None = None
 
@@ -18,7 +20,7 @@ async def init_db() -> None:
     db = _client.get_default_database()
     await init_beanie(
         database=db,
-        document_models=[User, Certificate, AuditLog],
+        document_models=[User, Certificate, AuditLog, FraudAlert, DigiLockerSync],
     )
 
 

@@ -19,3 +19,7 @@ eth-account
 reportlab
 PyPDF2
 aiohttp
+numpy
+python-magic
+structlog
+colorama
