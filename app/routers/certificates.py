@@ -13,7 +13,9 @@ from app.models.audit_log import AuditLog
 from app.models.certificate import Certificate
 from app.models.user import User
 from app.schemas.certificate_schemas import CertificateDetail, CertificateVerifyResponse, IssueCertificateResponse
-from app.services import blockchain_service, ipfs_service, qr_service
+from fastapi import BackgroundTasks
+from app.services import blockchain_service, ipfs_service, certificate_generator
+from app.services.qr_service import generate_qr
 
 router = APIRouter(prefix="/api/certificates", tags=["certificates"])
 
@@ -38,70 +40,119 @@ async def issue_certificate(
     grade: Annotated[str, Form()],
     certificate_pdf: Annotated[UploadFile, File()],
     user: User = _institute,
+    background_tasks: BackgroundTasks,
 ):
+    # 1) Validate uploaded PDF
     pdf_bytes = await certificate_pdf.read()
     if not pdf_bytes:
         raise HTTPException(status_code=400, detail="certificate_pdf is empty")
 
-    try:
-        pdf_pin = await ipfs_service.upload_file_to_ipfs(pdf_bytes, certificate_pdf.filename or "cert.pdf")
-    except ValueError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"IPFS upload failed: {e}") from e
+    if not Web3.is_address(learner_wallet):
+        raise HTTPException(status_code=400, detail="Invalid learner wallet address")
 
     institution_name = user.institution_name or user.name
-    metadata = {
-        "name": f"{course_name} — {learner_name}",
-        "description": f"SkillChain certificate for {course_name} completed at {institution_name}",
-        "image": pdf_pin["ipfs_url"],
-        "attributes": [
-            {"trait_type": "Course", "value": course_name},
-            {"trait_type": "Institution", "value": institution_name},
-            {"trait_type": "Completion Date", "value": completion_date},
-            {"trait_type": "Grade", "value": grade},
-            {"trait_type": "Learner Email", "value": learner_email},
-        ],
+
+    # create a temporary certificate id to embed in QR/metadata before DB insert
+    import uuid
+    temp_cid = str(uuid.uuid4())
+
+    # 2) Generate certificate PDF (can incorporate template values)
+    cert_doc = {
+        "learner_name": learner_name,
+        "course_name": course_name,
+        "institution_name": institution_name,
+        "completion_date": completion_date,
+        "grade": grade,
+        "certificate_id": temp_cid,
     }
 
     try:
-        meta_pin = await ipfs_service.upload_json_to_ipfs(metadata)
+        generated_pdf = certificate_generator.generate_certificate_pdf(cert_doc)
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Certificate generation failed: {e}") from e
+
+    # 3) Generate QR code
+    try:
+        # Use DB-generated certificate id later; create temp id using UUID4 string
+        import uuid
+
+        temp_cid = str(uuid.uuid4())
+        qr_png = certificate_generator.generate_qr_code(temp_cid, settings.FRONTEND_URL)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"QR generation failed: {e}") from e
+
+    # 4) Embed QR into PDF
+    try:
+        final_pdf = certificate_generator.embed_qr_in_certificate(generated_pdf, qr_png)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Embedding QR failed: {e}") from e
+
+    # 5) Upload PDF to IPFS
+    try:
+        pdf_pin = await ipfs_service.upload_file(final_pdf, certificate_pdf.filename or f"{temp_cid}.pdf", "application/pdf")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"IPFS upload failed: {e}") from e
+
+    # 6) Build metadata and upload
+    try:
+        metadata = await ipfs_service.build_certificate_metadata(
+            {
+                "learner_name": learner_name,
+                "course_name": course_name,
+                "institution_name": institution_name,
+                "completion_date": completion_date,
+                "grade": grade,
+                "certificate_id": temp_cid,
+                "issued_by": institution_name,
+                "issued_at_unix": int(__import__("time").time()),
+            },
+            pdf_ipfs_hash=pdf_pin["ipfs_hash"],
+        )
+        meta_pin = await ipfs_service.upload_json(metadata, name=f"certificate-{temp_cid}")
+    except Exception as e:
+        # If metadata fails, try to unpin PDF to avoid orphaned pins
+        await ipfs_service.unpin(pdf_pin.get("ipfs_hash"))
         raise HTTPException(status_code=502, detail=f"Metadata IPFS upload failed: {e}") from e
 
-    token_id: int | None = None
-    tx_hash: str | None = None
+    # 7) Mint on blockchain
     try:
         minted = await blockchain_service.mint_certificate(learner_wallet, meta_pin["ipfs_url"])
-        token_id = int(minted["token_id"])
-        tx_hash = minted["tx_hash"]
-    except ValueError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
+        token_id = int(minted.get("token_id")) if minted.get("token_id") is not None else None
+        tx_hash = minted.get("tx_hash")
     except Exception as e:
+        # Do not save to DB if mint fails; unpin metadata and pdf
+        await ipfs_service.unpin(meta_pin.get("ipfs_hash"))
+        await ipfs_service.unpin(pdf_pin.get("ipfs_hash"))
         raise HTTPException(status_code=502, detail=f"Blockchain mint failed: {e}") from e
 
-    cert = Certificate(
-        learner_name=learner_name,
-        learner_email=learner_email,
-        learner_wallet=learner_wallet,
-        course_name=course_name,
-        institution_name=institution_name,
-        completion_date=completion_date,
-        grade=grade,
-        ipfs_hash=pdf_pin["ipfs_hash"],
-        ipfs_url=pdf_pin["ipfs_url"],
-        metadata_ipfs_hash=meta_pin["ipfs_hash"],
-        metadata_ipfs_url=meta_pin["ipfs_url"],
-        token_id=token_id,
-        tx_hash=tx_hash,
-        contract_address=Web3.to_checksum_address(settings.CONTRACT_ADDRESS)
-        if settings.CONTRACT_ADDRESS
-        else "",
-        status="ACTIVE",
-        issued_by=user,
-    )
-    await cert.insert()
+    # 8) Save Certificate to DB
+    try:
+        cert = Certificate(
+            learner_name=learner_name,
+            learner_email=learner_email,
+            learner_wallet=learner_wallet,
+            course_name=course_name,
+            institution_name=institution_name,
+            completion_date=completion_date,
+            grade=grade,
+            ipfs_hash=pdf_pin["ipfs_hash"],
+            ipfs_url=pdf_pin["ipfs_url"],
+            metadata_ipfs_hash=meta_pin["ipfs_hash"],
+            metadata_ipfs_url=meta_pin["ipfs_url"],
+            token_id=token_id,
+            tx_hash=tx_hash,
+            contract_address=Web3.to_checksum_address(settings.CONTRACT_ADDRESS) if settings.CONTRACT_ADDRESS else "",
+            status="ACTIVE",
+            issued_by=user,
+        )
+        await cert.insert()
+    except Exception as e:
+        # On DB failure, consider unpinning to avoid orphaned data
+        await ipfs_service.unpin(meta_pin.get("ipfs_hash"))
+        await ipfs_service.unpin(pdf_pin.get("ipfs_hash"))
+        raise HTTPException(status_code=500, detail=f"Saving certificate failed: {e}") from e
 
+    # 9) Audit log
     await AuditLog(
         action="ISSUED",
         certificate_id=str(cert.certificate_id),
@@ -109,7 +160,19 @@ async def issue_certificate(
         metadata={"token_id": token_id, "tx_hash": tx_hash},
     ).insert()
 
-    qr_b64 = qr_service.generate_qr(str(cert.certificate_id))
+    # Background email stub
+    def _send_email_stub(to_email: str, certificate_id: str):
+        # In production integrate SMTP/SES; for now just log
+        from logging import getLogger
+
+        logger = getLogger("skillchain.email")
+        logger.info("Pretend-sent certificate email to %s for %s", to_email, certificate_id)
+
+    # schedule background email
+    background_tasks.add_task(_send_email_stub, learner_email, str(cert.certificate_id))
+
+    qr_b64 = generate_qr(str(cert.certificate_id))
+
     return IssueCertificateResponse(
         certificate_id=cert.certificate_id,
         token_id=token_id,

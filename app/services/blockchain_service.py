@@ -1,15 +1,31 @@
 """
-Blockchain integration for SkillChain (Polygon Mumbai + ERC-721).
+Async blockchain service for SkillChain.
 
-This module uses web3.py to talk to an Ethereum-compatible JSON-RPC node.
-Think of the blockchain as a shared ledger: transactions change state (cost gas),
-while *calls* only read data (free, no wallet signature needed).
+This service provides async-friendly wrappers around blocking web3.py calls
+using `asyncio.to_thread(...)` so it can be used safely inside FastAPI.
+
+Beginner notes:
+- Private key: a secret that proves ownership of an account. It NEVER leaves the
+  server in plaintext apart from secure env vars and is used to sign transactions.
+- Nonce: a per-account sequential counter used to prevent replay and order txs.
+  We MUST read the latest nonce before sending a signed tx to avoid collisions.
+- Gas: the unit of work on Ethereum networks. We estimate gas so the node can
+  validate the tx cost before it is mined. Over/under-estimating can cause
+  failed transactions or wasted ETH.
+- Transaction receipt: returned once a tx is mined (included in a block). It
+  contains `blockNumber`, `gasUsed`, and logs (events) emitted by the contract.
+- Event logs: compact indexed data stored with receipts. We parse logs to find
+  values like `tokenId` emitted by `CertificateIssued` because functions that
+  mint often do not return values directly in the receipt.
 """
 
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+import json
+import time
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 from eth_account import Account
 from web3 import Web3
@@ -17,143 +33,184 @@ from web3.exceptions import ContractLogicError
 
 from app.core.config import settings
 
-# -----------------------------------------------------------------------------
-# 1) Connect to Polygon Mumbai through an HTTP RPC URL from .env
-#    The provider forwards your requests to a node synced with the testnet.
-# -----------------------------------------------------------------------------
-_w3: Web3 | None = None
-_contract: Any = None
 
+class BlockchainService:
+    def __init__(self):
+        """Connect to RPC, load contract, and prepare the institute account.
 
-def _get_w3() -> Web3:
-    global _w3
-    if _w3 is None:
-        _w3 = Web3(Web3.HTTPProvider(settings.POLYGON_RPC_URL))
-    return _w3
+        This constructor performs only lightweight synchronous operations. Heavy
+        network actions are executed in the async methods via `to_thread`.
+        """
+        # Connect to Polygon Mumbai via RPC URL from settings
+        self.rpc = settings.POLYGON_RPC_URL
+        self.w3 = Web3(Web3.HTTPProvider(self.rpc))
 
+        # Load deployed contract info from bundled file (deployed.json) if present
+        deployed_path = Path(__file__).resolve().parent.parent / "contracts" / "deployed.json"
+        contract_address = settings.CONTRACT_ADDRESS
+        contract_abi = settings.CONTRACT_ABI
 
-def _get_contract():
-    """
-    2) Bind the deployed SkillCertificate contract: address + ABI describe *what*
-       functions exist and how to encode/decode them for the node.
-    """
-    global _contract
-    if _contract is None:
-        if not settings.CONTRACT_ADDRESS or not settings.CONTRACT_ABI:
-            raise ValueError(
-                "CONTRACT_ADDRESS and contracts/abi.json must be configured before on-chain actions."
+        if deployed_path.is_file():
+            try:
+                data = json.loads(deployed_path.read_text(encoding="utf-8"))
+                contract_address = data.get("address") or contract_address
+                contract_abi = data.get("abi") or contract_abi
+            except Exception:
+                # keep falling back to settings if file is malformed
+                pass
+
+        if not contract_address or not contract_abi:
+            raise ValueError("Contract address and ABI must be configured (deployed.json or settings).")
+
+        self.contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=contract_abi)
+
+        # Load institute wallet from PRIVATE_KEY in settings
+        if not settings.PRIVATE_KEY:
+            raise ValueError("PRIVATE_KEY is not set in settings/.env")
+        key = settings.PRIVATE_KEY.strip()
+        if key.startswith("0x"):
+            key = key[2:]
+        self.private_key = key
+        self.account = Account.from_key(self.private_key)
+
+        # NOTE: nonce is fetched per-transaction to avoid races; see `nonce` comment above.
+
+    # -------------------- Utility helpers --------------------
+    async def _wait_for_receipt(self, tx_hash: bytes, timeout: int = 120, poll_interval: float = 2.0) -> Dict[str, Any]:
+        """Poll for transaction receipt with timeout. Runs in a thread to avoid blocking the loop."""
+        def _wait():
+            start = time.time()
+            while True:
+                try:
+                    receipt = self.w3.eth.get_transaction_receipt(tx_hash)
+                    if receipt is not None:
+                        return dict(receipt)
+                except Exception:
+                    pass
+                if time.time() - start > timeout:
+                    raise TimeoutError("Timed out waiting for transaction receipt")
+                time.sleep(poll_interval)
+
+        return await asyncio.to_thread(_wait)
+
+    async def mint_certificate(self, to_address: str, token_uri: str) -> Dict[str, Any]:
+        """Mint a certificate NFT and return details including token id and gas used.
+
+        Steps:
+        - Build transaction with gas estimation
+        - Sign with private key
+        - Send raw transaction
+        - Poll for receipt (timeout: 120s)
+        - Parse `CertificateIssued` event to extract `tokenId`
+        """
+        if not Web3.is_address(to_address):
+            raise ValueError("Invalid recipient address")
+
+        to_checksum = Web3.to_checksum_address(to_address)
+
+        fn = self.contract.functions.mintCertificate(to_checksum, token_uri)
+
+        try:
+            # Build transaction fields
+            nonce = self.w3.eth.get_transaction_count(self.account.address, "pending")
+            gas_estimate = fn.estimate_gas({"from": self.account.address})
+            gas_price = self.w3.eth.gas_price
+            tx = fn.build_transaction({
+                "from": self.account.address,
+                "nonce": nonce,
+                "gas": int(gas_estimate * 1.2),
+                "gasPrice": gas_price,
+            })
+
+            # Sign the transaction
+            signed = self.w3.eth.account.sign_transaction(tx, private_key=self.private_key)
+
+            # Send raw transaction
+            tx_hash = await asyncio.to_thread(self.w3.eth.send_raw_transaction, signed.rawTransaction)
+
+            # Wait for receipt
+            receipt = await self._wait_for_receipt(tx_hash, timeout=120, poll_interval=2)
+
+            # Parse CertificateIssued event from receipt logs using the receipt object
+            receipt_obj = self.w3.eth.get_transaction_receipt(tx_hash)
+            try:
+                issued = self.contract.events.CertificateIssued().process_receipt(receipt_obj)
+            except Exception:
+                issued = []
+
+            token_id: Optional[int] = None
+            if issued:
+                token_id = int(issued[0]["args"]["tokenId"])
+
+            return {
+                "token_id": token_id,
+                "tx_hash": Web3.to_hex(tx_hash),
+                "block_number": receipt.get("blockNumber"),
+                "gas_used": receipt.get("gasUsed"),
+            }
+
+        except ValueError as e:
+            msg = str(e)
+            if "insufficient funds" in msg.lower():
+                raise RuntimeError("Insufficient funds to send transaction")
+            raise
+
+    async def verify_certificate(self, token_id: int) -> Dict[str, Any]:
+        """Read certificate metadata and status without spending gas.
+
+        Returns: { token_uri, owner_address, issuer_address, is_revoked, exists }
+        """
+        try:
+            uri, owner, issuer, is_revoked = await asyncio.to_thread(
+                lambda: self.contract.functions.verifyCertificate(int(token_id)).call()
             )
-        w3 = _get_w3()
-        _contract = w3.eth.contract(
-            address=Web3.to_checksum_address(settings.CONTRACT_ADDRESS),
-            abi=settings.CONTRACT_ABI,
-        )
-    return _contract
+            exists = owner != "0x0000000000000000000000000000000000000000"
+            return {
+                "token_uri": uri,
+                "owner_address": owner,
+                "issuer_address": issuer,
+                "is_revoked": is_revoked,
+                "exists": exists,
+            }
+        except ContractLogicError:
+            return {"token_uri": None, "owner_address": None, "issuer_address": None, "is_revoked": False, "exists": False}
+
+    async def revoke_certificate(self, token_id: int) -> Dict[str, Any]:
+        """Revoke a certificate by calling `revokeCertificate(tokenId)`.
+
+        Returns: { tx_hash, block_number }
+        """
+        fn = self.contract.functions.revokeCertificate(int(token_id))
+        try:
+            nonce = self.w3.eth.get_transaction_count(self.account.address, "pending")
+            gas_estimate = fn.estimate_gas({"from": self.account.address})
+            gas_price = self.w3.eth.gas_price
+            tx = fn.build_transaction({
+                "from": self.account.address,
+                "nonce": nonce,
+                "gas": int(gas_estimate * 1.2),
+                "gasPrice": gas_price,
+            })
+
+            signed = self.w3.eth.account.sign_transaction(tx, private_key=self.private_key)
+            tx_hash = await asyncio.to_thread(self.w3.eth.send_raw_transaction, signed.rawTransaction)
+            receipt = await self._wait_for_receipt(tx_hash, timeout=120, poll_interval=2)
+            return {"tx_hash": Web3.to_hex(tx_hash), "block_number": receipt.get("blockNumber")}
+        except ValueError as e:
+            msg = str(e)
+            if "insufficient funds" in msg.lower():
+                raise RuntimeError("Insufficient funds to send transaction")
+            raise
+
+    async def get_total_certificates(self) -> int:
+        """Call `totalSupply()` to get number of certificates ever minted."""
+        return await asyncio.to_thread(lambda: int(self.contract.functions.totalSupply().call()))
+
+    async def is_valid_address(self, address: str) -> bool:
+        """Validate an Ethereum address format (checksum or non-checksum)."""
+        return Web3.is_address(address)
 
 
-def _institute_account() -> Account:
-    """Load the institute wallet from PRIVATE_KEY (must match contract owner for mint/revoke)."""
-    if not settings.PRIVATE_KEY:
-        raise ValueError("PRIVATE_KEY is not set in .env")
-    key = settings.PRIVATE_KEY.strip()
-    if key.startswith("0x"):
-        key = key[2:]
-    return Account.from_key(key)
+# Create singleton instance
+blockchain_service = BlockchainService()
 
-
-def _raw_signed_bytes(signed_tx) -> bytes:
-    """web3 / eth_account versions differ on attribute name for serialized tx bytes."""
-    if hasattr(signed_tx, "raw_transaction"):
-        return signed_tx.raw_transaction
-    return signed_tx.rawTransaction
-
-
-def _build_and_send_tx(contract_fn):
-    """
-    3) Build a transaction object (who pays, which function, args, gas, nonce...),
-       4) sign it with the private key (proves you authorize spending gas + changing state),
-       5) broadcast raw bytes to the network via send_raw_transaction.
-    Returns the transaction hash as HexBytes.
-    """
-    w3 = _get_w3()
-    acct = _institute_account()
-    chain_id = w3.eth.chain_id
-
-    tx = contract_fn.build_transaction(
-        {
-            "from": acct.address,
-            "nonce": w3.eth.get_transaction_count(acct.address),
-            "gas": 500_000,
-            "gasPrice": w3.eth.gas_price,
-            "chainId": chain_id,
-        }
-    )
-    signed = w3.eth.account.sign_transaction(tx, private_key=acct.key)
-    return w3.eth.send_raw_transaction(_raw_signed_bytes(signed))
-
-
-def _mint_certificate_sync(to_address: str, token_uri: str) -> tuple[int, str]:
-    w3 = _get_w3()
-    contract = _get_contract()
-    to_checksum = Web3.to_checksum_address(to_address)
-
-    # mintCertificate is a *state-changing* function → must be a signed transaction.
-    fn = contract.functions.mintCertificate(to_checksum, token_uri)
-    tx_hash = _build_and_send_tx(fn)
-    receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-    tx_hash_hex = Web3.to_hex(tx_hash)
-
-    # Parse CertificateIssued event to recover the new token id (return value is not on receipt).
-    issued = contract.events.CertificateIssued().process_receipt(receipt)
-    if not issued:
-        raise RuntimeError("Mint receipt contained no CertificateIssued event; check ABI/contract.")
-    token_id = int(issued[0]["args"]["tokenId"])
-    return token_id, tx_hash_hex
-
-
-async def mint_certificate(to_address: str, token_uri: str) -> dict[str, Any]:
-    """Mint an NFT certificate to the learner wallet; returns token_id and tx_hash."""
-    token_id, tx_hash_hex = await asyncio.to_thread(_mint_certificate_sync, to_address, token_uri)
-    return {"token_id": token_id, "tx_hash": tx_hash_hex}
-
-
-def _verify_certificate_sync(token_id: int) -> dict[str, Any]:
-    """
-    Read tokenURI + owner without spending gas (call, not transaction).
-    If the token was burned, the contract reverts — we surface that as invalid.
-    """
-    contract = _get_contract()
-    try:
-        uri, owner = contract.functions.verifyCertificate(int(token_id)).call()
-        return {"token_uri": uri, "owner": owner}
-    except ContractLogicError:
-        return {"token_uri": None, "owner": None}
-
-
-async def verify_certificate(token_id: int) -> dict[str, Any]:
-    """On-chain read: metadata URI and current owner for a token id."""
-    return await asyncio.to_thread(_verify_certificate_sync, token_id)
-
-
-def _revoke_certificate_sync(token_id: int) -> str:
-    """Burn the NFT (revoke) — only works if signer is contract owner."""
-    contract = _get_contract()
-    fn = contract.functions.revokeCertificate(int(token_id))
-    tx_hash = _build_and_send_tx(fn)
-    w3 = _get_w3()
-    w3.eth.wait_for_transaction_receipt(tx_hash)
-    return Web3.to_hex(tx_hash)
-
-
-async def revoke_certificate(token_id: int) -> str:
-    """Revoke (burn) certificate on-chain; returns transaction hash."""
-    return await asyncio.to_thread(_revoke_certificate_sync, token_id)
-
-
-def chain_ready() -> bool:
-    """True if RPC responds (used for health / graceful degradation)."""
-    try:
-        w3 = _get_w3()
-        return w3.is_connected()
-    except Exception:
-        return False

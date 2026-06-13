@@ -14,3 +14,8 @@ torch
 python-dotenv
 pydantic-settings
 email-validator
+py-solc-x
+eth-account
+reportlab
+PyPDF2
+aiohttp
