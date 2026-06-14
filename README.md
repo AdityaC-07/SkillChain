@@ -164,3 +164,43 @@ Contract ABI is loaded from `app/contracts/abi.json` (update if you change the S
 - `seed.py` wipes `users`, `certificates`, and `audit_logs` in the configured database, then inserts demo data **without** calling the blockchain.
 - The fraud endpoint uses `google/vit-base-patch16-224` as a placeholder signal; it is not a trained forgery detector.
 - Polygon Mumbai may be deprecated upstream; switch `POLYGON_RPC_URL` to your preferred test network if Mumbai RPCs fail.
+
+## Known Limitations
+
+- **Mumbai Testnet Performance**: Polygon Mumbai can be slow during high network congestion. Certificate minting may take 30-60 seconds. The system includes graceful failure handling with PENDING_MINT status and automatic retry logic.
+- **Fraud Detection Model**: The current fraud detection uses a pre-trained ViT model as a placeholder. For production, a model specifically trained on certificate forgery patterns should be used.
+- **Read-Only Mode**: If `PRIVATE_KEY` is not set in `.env`, the server starts in read-only mode where certificate issuance is disabled but verification still works.
+- **IPFS Pinning**: Relies on Pinata's free tier which has rate limits. For high-volume production, consider using a dedicated IPFS node or paid Pinata plan.
+- **Demo Mode**: The `/demo` route pre-fills form data for hackathon demonstrations. This should be disabled in production environments.
+
+## Screenshots
+
+*(Team to add screenshots here)*
+
+- Landing page with live activity feed
+- Certificate issuance form with PDF preview
+- Certificate detail page with blockchain explorer embed
+- Why Blockchain comparison widget
+- Fraud scanning interface
+
+## Running Smoke Tests
+
+To verify the application is working correctly, run the smoke test script:
+
+```bash
+# Set API URL if not using localhost
+export API_URL=http://localhost:8000
+
+# Run smoke tests
+bash scripts/smoke_test.sh
+```
+
+The smoke test will:
+1. Check health endpoint
+2. Register a test institute
+3. Login with test credentials
+4. Issue a certificate (may fail if no blockchain funds)
+5. Verify the certificate
+6. Run a fraud scan
+
+Each test will print PASS or FAIL with a summary at the end.

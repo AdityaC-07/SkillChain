@@ -26,7 +26,8 @@ class Certificate(Document):
     token_id: int | None = None
     tx_hash: str | None = None
     contract_address: str
-    status: Literal["ACTIVE", "REVOKED"] = "ACTIVE"
+    status: Literal["ACTIVE", "REVOKED", "PENDING_MINT"] = "ACTIVE"
+    retry_count: int = 0
     issued_by: Link[User]
     issued_at: datetime = Field(default_factory=datetime.utcnow)
 

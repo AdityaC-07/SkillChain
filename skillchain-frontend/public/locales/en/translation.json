@@ -1,8 +1,12 @@
 {
-  "nav": { "home": "Get Certified", "verify": "Verify", "login": "Login", "dashboard": "Dashboard" },
+  "nav": { "home": "Get Certified", "verify": "Verify", "login": "Login", "dashboard": "Dashboard", "about": "About" },
   "hero": { "title": "Your Skills. Verified Forever.", "subtitle": "Issue blockchain-backed vocational certificates.", "cta_certify": "Get Certified", "cta_verify": "Verify Now" },
   "verify": { "title": "Verify Certificate", "placeholder": "Paste Certificate ID or scan QR", "button": "Verify" },
-  "issue": { "step1": "Learner Details", "step2": "Certificate Details", "step3": "Upload & Preview", "mint_button": "Mint Certificate" },
+  "issue": { "step1": "Learner Details", "step2": "Certificate Details", "step3": "Upload & Preview", "mint_button": "Mint Certificate", "run_demo": "🚀 Run Full Demo" },
   "fraud": { "upload": "Upload certificate image", "analyze": "Analyze Certificate", "verdict": { "genuine": "GENUINE", "suspicious": "SUSPICIOUS", "fake": "FAKE" } },
-  "dashboard": { "total_issued": "Total Issued", "verified_today": "Verified Today", "fraud_caught": "Fraud Caught" }
+  "dashboard": { "total_issued": "Total Issued", "verified_today": "Verified Today", "fraud_caught": "Fraud Caught" },
+  "landing": { "why_blockchain": "Why Blockchain? See the Difference", "live_activity": "Live Activity", "no_activity": "No recent activity", "updates_every": "Updates every 10 seconds", "how_it_works": "How it works" },
+  "comparison": { "traditional": "Traditional System", "skillchain": "SkillChain", "verification_time": "Verification Time", "forgery_risk": "Forgery Risk", "cost": "Cost", "centralized": "Centralized", "decentralized": "Decentralized" },
+  "activity": { "issued": "Certificate issued for", "verified": "Certificate verified", "revoked": "Certificate revoked", "fraud_scan": "Fraud scan" },
+  "about": { "title": "About SkillChain", "problem": "Problem Statement", "solution": "Our Solution", "team": "Team", "tech_stack": "Tech Stack" }
 }

@@ -1,10 +1,13 @@
 """Application settings loaded from environment variables."""
 
 import json
+import logging
 from functools import lru_cache
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 
 def _load_contract_abi() -> list:
@@ -36,6 +39,7 @@ class Settings(BaseSettings):
     CONTRACT_ADDRESS: str = ""
 
     FRONTEND_URL: str = "http://localhost:5173"
+    ALLOWED_ORIGINS: str = "http://localhost:5173"
 
     @property
     def CONTRACT_ABI(self) -> list:
@@ -45,6 +49,35 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def validate_environment(settings: Settings) -> bool:
+    """Validate required environment variables on startup.
+    
+    Returns:
+        bool: True if running in read-only mode (issuance disabled), False otherwise
+    """
+    required_vars = {
+        "MONGODB_URI": settings.MONGODB_URI,
+        "JWT_SECRET": settings.JWT_SECRET,
+        "PINATA_API_KEY": settings.PINATA_API_KEY,
+        "PINATA_SECRET_KEY": settings.PINATA_SECRET_KEY,
+        "POLYGON_RPC_URL": settings.POLYGON_RPC_URL,
+    }
+    
+    missing_vars = [var for var, value in required_vars.items() if not value]
+    
+    if missing_vars:
+        raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
+    
+    # CONTRACT_ADDRESS can be empty before deploy
+    # PRIVATE_KEY is optional for read-only mode
+    read_only_mode = False
+    if not settings.PRIVATE_KEY:
+        logger.warning("PRIVATE_KEY not set - server starting in READ-ONLY mode (certificate issuance disabled)")
+        read_only_mode = True
+    
+    return read_only_mode
 
 
 settings = get_settings()

@@ -21,5 +21,6 @@ PyPDF2
 aiohttp
 numpy
 python-magic
+bleach
 structlog
 colorama

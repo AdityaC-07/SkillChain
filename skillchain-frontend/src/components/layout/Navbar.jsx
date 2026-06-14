@@ -18,6 +18,7 @@ export default function Navbar({ onToggleSidebar=()=>{} }){
 
         <div className="flex items-center space-x-4">
           <Link to="/verify" className="text-navy-700">{t('nav.verify')}</Link>
+          <Link to="/about" className="text-navy-700">{t('nav.about')}</Link>
           {!auth?.isAuthenticated ? (
             <>
               <Link to="/login" className="text-amber">{t('nav.login')}</Link>

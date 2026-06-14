@@ -16,6 +16,7 @@ from app.schemas.certificate_schemas import CertificateDetail, CertificateVerify
 from fastapi import BackgroundTasks
 from app.services import blockchain_service, ipfs_service, certificate_generator
 from app.services.qr_service import generate_qr
+from app.utils.sanitization import sanitize_certificate_fields
 
 router = APIRouter(prefix="/api/certificates", tags=["certificates"])
 
@@ -39,13 +40,39 @@ async def issue_certificate(
     completion_date: Annotated[str, Form()],
     grade: Annotated[str, Form()],
     certificate_pdf: Annotated[UploadFile, File()],
-    user: User = _institute,
     background_tasks: BackgroundTasks,
+    user: User = _institute,
 ):
-    # 1) Validate uploaded PDF
+    # 1) Sanitize input fields
+    sanitized_data = sanitize_certificate_fields({
+        "learner_name": learner_name,
+        "course_name": course_name,
+        "institution_name": user.institution_name or user.name,
+        "grade": grade,
+        "completion_date": completion_date,
+    })
+    learner_name = sanitized_data["learner_name"]
+    course_name = sanitized_data["course_name"]
+    institution_name = sanitized_data["institution_name"]
+    grade = sanitized_data["grade"]
+    completion_date = sanitized_data["completion_date"]
+
+    # 2) Check for duplicate certificate
+    existing_cert = await Certificate.find_one(
+        Certificate.learner_email == learner_email,
+        Certificate.course_name == course_name,
+        Certificate.completion_date == completion_date
+    )
+    if existing_cert:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Certificate already exists for this learner, course, and completion date. Certificate ID: {existing_cert.certificate_id}"
+        )
+
+    # 3) Validate uploaded PDF
+    from app.utils.file_validation import validate_pdf_upload
     pdf_bytes = await certificate_pdf.read()
-    if not pdf_bytes:
-        raise HTTPException(status_code=400, detail="certificate_pdf is empty")
+    validate_pdf_upload(pdf_bytes, certificate_pdf.filename)
 
     if not Web3.is_address(learner_wallet):
         raise HTTPException(status_code=400, detail="Invalid learner wallet address")
@@ -114,18 +141,23 @@ async def issue_certificate(
         await ipfs_service.unpin(pdf_pin.get("ipfs_hash"))
         raise HTTPException(status_code=502, detail=f"Metadata IPFS upload failed: {e}") from e
 
-    # 7) Mint on blockchain
+    # 7) Mint on blockchain with graceful failure handling
+    token_id = None
+    tx_hash = None
+    mint_failed = False
+    
     try:
         minted = await blockchain_service.mint_certificate(learner_wallet, meta_pin["ipfs_url"])
         token_id = int(minted.get("token_id")) if minted.get("token_id") is not None else None
         tx_hash = minted.get("tx_hash")
     except Exception as e:
-        # Do not save to DB if mint fails; unpin metadata and pdf
-        await ipfs_service.unpin(meta_pin.get("ipfs_hash"))
-        await ipfs_service.unpin(pdf_pin.get("ipfs_hash"))
-        raise HTTPException(status_code=502, detail=f"Blockchain mint failed: {e}") from e
+        # Log the failure but continue to save certificate as PENDING_MINT
+        from logging import getLogger
+        logger = getLogger("skillchain.blockchain")
+        logger.error(f"Blockchain mint failed for certificate {temp_cid}: {e}")
+        mint_failed = True
 
-    # 8) Save Certificate to DB
+    # 8) Save Certificate to DB (save even if mint failed as PENDING_MINT)
     try:
         cert = Certificate(
             learner_name=learner_name,
@@ -142,7 +174,7 @@ async def issue_certificate(
             token_id=token_id,
             tx_hash=tx_hash,
             contract_address=Web3.to_checksum_address(settings.CONTRACT_ADDRESS) if settings.CONTRACT_ADDRESS else "",
-            status="ACTIVE",
+            status="PENDING_MINT" if mint_failed else "ACTIVE",
             issued_by=user,
         )
         await cert.insert()
@@ -318,3 +350,26 @@ async def revoke_certificate(certificate_id: UUID, user: User = _institute):
     ).insert()
 
     return {"status": "REVOKED", "certificate_id": str(cert.certificate_id), "tx_hash": tx}
+
+
+@router.get("/pending")
+async def get_pending_certificates(user: User = _institute):
+    """Get all certificates in PENDING_MINT status for the current institute."""
+    pending_certs = await Certificate.find(
+        Certificate.status == "PENDING_MINT",
+        Certificate.issued_by == user
+    ).to_list()
+    
+    return [
+        {
+            "certificate_id": str(cert.certificate_id),
+            "learner_name": cert.learner_name,
+            "learner_email": cert.learner_email,
+            "course_name": cert.course_name,
+            "completion_date": cert.completion_date,
+            "grade": cert.grade,
+            "retry_count": cert.retry_count,
+            "issued_at": cert.issued_at.isoformat(),
+        }
+        for cert in pending_certs
+    ]
