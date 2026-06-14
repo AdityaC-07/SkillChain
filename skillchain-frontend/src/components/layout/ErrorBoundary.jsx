@@ -28,7 +28,7 @@ export default class ErrorBoundary extends React.Component {
             <p className="text-slate-600 mb-6">The app encountered an unexpected error. Try reloading the page and if the issue continues, contact support.</p>
             <div className="flex flex-col sm:flex-row justify-center gap-3">
               <button onClick={this.reload} className="px-5 py-3 bg-amber text-white rounded shadow hover:bg-amber-600">Reload</button>
-              <Link to="/" className="px-5 py-3 border border-slate-300 rounded hover:bg-slate-100">Go home</Link>
+              <a href="/" className="px-5 py-3 border border-slate-300 rounded hover:bg-slate-100">Go home</a>
             </div>
           </div>
         </div>

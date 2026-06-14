@@ -1,0 +1,12 @@
+{
+  "nav": { "home": "प्रमाणित करें", "verify": "सत्यापित करें", "login": "लॉगिन", "dashboard": "डैशबोर्ड", "about": "हमारे बारे में" },
+  "hero": { "title": "आपके कौशल। हमेशा सत्यापित।", "subtitle": "ब्लॉकचेन-आधारित व्यावसायिक प्रमाणपत्र जारी करें।", "cta_certify": "प्रमाणित हों", "cta_verify": "अब सत्यापित करें" },
+  "verify": { "title": "प्रमाणपत्र सत्यापित करें", "placeholder": "प्रमाणपत्र आईडी पेस्ट करें या QR स्कैन करें", "button": "सत्यापित करें" },
+  "issue": { "step1": "सीखने वाले का विवरण", "step2": "प्रमाणपत्र विवरण", "step3": "अपलोड और पूर्वावलोकन", "mint_button": "प्रमाणपत्र मिंट करें", "run_demo": "🚀 पूरा डेमो चलाएं" },
+  "fraud": { "upload": "प्रमाणपत्र छवि अपलोड करें", "analyze": "प्रमाणपत्र का विश्लेषण करें", "verdict": { "genuine": "प्रामाणिक", "suspicious": "संदिग्ध", "fake": "नकली" } },
+  "dashboard": { "total_issued": "कुल जारी", "verified_today": "आज सत्यापित", "fraud_caught": "कृत्रिम पकड़ा गया" },
+  "landing": { "why_blockchain": "ब्लॉकचेन क्यों? अंतर देखें", "live_activity": "लाइव गतिविधि", "no_activity": "कोई हालिया गतिविधि नहीं", "updates_every": "हर 10 सेकंड में अपडेट", "how_it_works": "यह कैसे काम करता है" },
+  "comparison": { "traditional": "पारंपरिक प्रणाली", "skillchain": "स्किलचेन", "verification_time": "सत्यापन समय", "forgery_risk": "नकली जोखिम", "cost": "लागत", "centralized": "केंद्रीकृत", "decentralized": "विकेंद्रीकृत" },
+  "activity": { "issued": "के लिए प्रमाणपत्र जारी", "verified": "प्रमाणपत्र सत्यापित", "revoked": "प्रमाणपत्र रद्द", "fraud_scan": "धोखाधड़ी स्कैन" },
+  "about": { "title": "स्किलचेन के बारे में", "problem": "समस्या विवरण", "solution": "हमारा समाधान", "team": "टीम", "tech_stack": "तकनीकी स्टैक" }
+}

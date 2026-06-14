@@ -1,72 +1,244 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
-import StatsCard from '../../components/ui/StatsCard'
-import CertificateCard from '../../components/certificates/CertificateCard'
+import {
+  FileText,
+  Users,
+  ShieldCheck,
+  ShieldAlert,
+  Search,
+  Filter,
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  Plus
+} from 'lucide-react'
 
-export default function InstituteDashboard(){
-  const stats = [
-    { title: 'Total Issued', value: 1240 },
-    { title: 'Verified Today', value: 86 },
-    { title: 'Fraud Caught', value: 3 },
+export default function InstituteDashboard() {
+  const recentIssuances = [
+    {
+      initials: 'AM',
+      name: 'Aria Montgomery',
+      course: 'Adv. Digital Fabrication',
+      date: 'Oct 24, 2024',
+      txHash: '0x4a2...9f3e',
+      status: 'VERIFIED',
+      avatarBg: 'bg-[#EAF0F6]',
+      avatarText: 'text-[#4F6C8A]'
+    },
+    {
+      initials: 'JL',
+      name: 'Julian Laurent',
+      course: 'Sustainable Agriculture',
+      date: 'Oct 22, 2024',
+      txHash: '0x8b1...e4c2',
+      status: 'VERIFIED',
+      avatarBg: 'bg-[#FFF4EA]',
+      avatarText: 'text-[#994914]'
+    },
+    {
+      initials: 'SK',
+      name: 'Sarah Kim',
+      course: 'Micro-Electronic Repair',
+      date: 'Oct 21, 2024',
+      txHash: '---',
+      status: 'PENDING',
+      avatarBg: 'bg-[#F5F1EB]',
+      avatarText: 'text-[#5C5854]'
+    },
+    {
+      initials: 'RW',
+      name: 'Robert Walters',
+      course: 'Cybersecurity Essentials',
+      date: 'Oct 19, 2024',
+      txHash: '0xf5c...2a1d',
+      status: 'VERIFIED',
+      avatarBg: 'bg-[#EAF0F6]',
+      avatarText: 'text-[#4F6C8A]'
+    }
   ]
 
-  const recent = [{ learner_name: 'Asha R', course_name: 'Welding', completion_date: '2026-05-12', certificate_id:'abc123', learner_wallet:'0x1234567890abcdef' }]
-  const [pending, setPending] = useState([])
-
-  useEffect(()=>{
-    const stored = JSON.parse(localStorage.getItem('pendingCertificates') || '[]')
-    setPending(Array.isArray(stored) ? stored : [])
-  }, [])
-
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div className="flex-1 flex flex-col pt-4 relative">
+      <div className="flex justify-between items-start mb-8">
         <div>
-          <h1 className="text-2xl">Institute Dashboard</h1>
-          <p className="text-sm text-slate-600">Overview of issued certificates and pending blockchain activity.</p>
+          <h1 className="text-[32px] font-extrabold text-[#1A1816] leading-tight tracking-tight mb-1">
+            Institutional Dashboard
+          </h1>
+          <p className="text-[#5C5854] text-sm font-medium">
+            Real-time vocational certificate monitoring on-chain.
+          </p>
         </div>
-        <Link to="/certificates/issue" className="inline-flex items-center justify-center px-4 py-2 bg-amber text-white rounded">Issue Certificate</Link>
+        <Link to="/certificates/issue" className="bg-[#A0522D] text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-[#8B4513] transition-colors flex items-center">
+          <Plus className="w-4 h-4 mr-1.5" />
+          Issue New Certificate
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        {stats.map(s=> <StatsCard key={s.title} title={s.title} value={s.value} />)}
-      </div>
-
-      <section className="mt-8">
-        <h2 className="text-lg">Pending Certificates</h2>
-        {pending.length ? (
-          <div className="mt-3 grid grid-cols-1 gap-3">
-            {pending.map(item => (
-              <div key={item.txHash} className="bg-white p-4 rounded shadow">
-                <div className="text-sm text-slate-500">{item.course_name || 'Pending certificate'}</div>
-                <div className="mt-2 font-semibold">{item.learner_name || 'Unknown learner'}</div>
-                <div className="text-xs text-slate-500 mt-2">Transaction: <span className="font-mono break-all">{item.txHash}</span></div>
-                <div className="text-xs text-slate-400 mt-1">Saved {new Date(item.createdAt).toLocaleString()}</div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-3 rounded border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-            <p className="text-slate-700">No pending certificates yet.</p>
-            <Link to="/certificates/issue" className="mt-3 inline-flex items-center justify-center px-4 py-2 bg-amber text-white rounded">Issue one now</Link>
-          </div>
-        )}
-      </section>
-
-      <section className="mt-8">
-        <h2 className="text-lg">Recent Certificates</h2>
-        <div className="mt-3 grid grid-cols-1 gap-3">
-          {recent.length ? (
-            recent.map(r=> <CertificateCard key={r.certificate_id} cert={r} />)
-          ) : (
-            <div className="rounded border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-              <p className="text-slate-700">No certificates yet.</p>
-              <p className="text-slate-500 mt-2">Issue your first certificate to get started.</p>
-              <Link to="/certificates/issue" className="mt-3 inline-flex items-center justify-center px-4 py-2 bg-amber text-white rounded">Issue your first certificate</Link>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white border border-[#EAE3DC] rounded-2xl p-5 shadow-sm">
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-10 h-10 bg-[#EAF0F6] rounded-xl flex items-center justify-center">
+              <FileText className="w-5 h-5 text-[#4F6C8A]" strokeWidth={2} />
             </div>
-          )}
+            <span className="text-[11px] font-bold text-[#8B8276]">+12% this mo</span>
+          </div>
+          <p className="text-[#8B8276] text-[10px] font-bold uppercase tracking-widest mb-1">Certificates Issued</p>
+          <p className="text-3xl font-extrabold text-[#1A1816]">12,548</p>
         </div>
-      </section>
+
+        <div className="bg-white border border-[#EAE3DC] rounded-2xl p-5 shadow-sm">
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-10 h-10 bg-[#FFF4EA] rounded-xl flex items-center justify-center">
+              <Users className="w-5 h-5 text-[#E07A25]" strokeWidth={2} />
+            </div>
+            <span className="text-[11px] font-bold text-[#8B8276]">Live pulse</span>
+          </div>
+          <p className="text-[#8B8276] text-[10px] font-bold uppercase tracking-widest mb-1">Active Students</p>
+          <p className="text-3xl font-extrabold text-[#1A1816]">4,892</p>
+        </div>
+
+        <div className="bg-white border border-[#EAE3DC] rounded-2xl p-5 shadow-sm">
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-10 h-10 bg-[#FEF9C3] rounded-xl flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-[#CA8A04]" strokeWidth={2} />
+            </div>
+            <span className="text-[11px] font-bold text-[#1A1816]">24 Pending</span>
+          </div>
+          <p className="text-[#8B8276] text-[10px] font-bold uppercase tracking-widest mb-1">Verifications</p>
+          <p className="text-3xl font-extrabold text-[#1A1816]">1,230</p>
+        </div>
+
+        <div className="bg-white border border-[#EAE3DC] rounded-2xl p-5 shadow-sm">
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-10 h-10 bg-[#FEE2E2] rounded-xl flex items-center justify-center">
+              <ShieldAlert className="w-5 h-5 text-[#DC2626]" strokeWidth={2} />
+            </div>
+            <span className="text-[11px] font-bold text-[#DC2626]">Secure</span>
+          </div>
+          <p className="text-[#8B8276] text-[10px] font-bold uppercase tracking-widest mb-1">Flagged Cases</p>
+          <p className="text-3xl font-extrabold text-[#1A1816]">0</p>
+        </div>
+      </div>
+
+      <div className="bg-white border border-[#EAE3DC] rounded-2xl shadow-sm relative">
+        <div className="p-6 border-b border-[#EAE3DC] flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h2 className="text-lg font-bold text-[#1A1816]">Recent Issuance</h2>
+          <div className="flex space-x-3">
+            <div className="relative">
+              <Search className="w-4 h-4 text-[#8B8276] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text" 
+                placeholder="Search student..." 
+                className="pl-9 pr-4 py-2 border border-[#EAE3DC] rounded-lg text-sm text-[#1A1816] placeholder-[#8B8276] focus:outline-none focus:border-[#E07A25]"
+              />
+            </div>
+            <button className="flex items-center space-x-2 px-4 py-2 border border-[#EAE3DC] rounded-lg text-sm font-medium text-[#5C5854] hover:bg-[#F5F1EB] transition-colors">
+              <Filter className="w-4 h-4" />
+              <span>Filter</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="text-[11px] text-[#8B8276] font-bold uppercase tracking-wider border-b border-[#EAE3DC] bg-[#FDFBFA]">
+              <tr>
+                <th className="px-6 py-4 font-bold">Student Name</th>
+                <th className="px-6 py-4 font-bold">Course</th>
+                <th className="px-6 py-4 font-bold">Issue Date</th>
+                <th className="px-6 py-4 font-bold">TX Hash</th>
+                <th className="px-6 py-4 font-bold">Status</th>
+                <th className="px-6 py-4 font-bold text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#EAE3DC]">
+              {recentIssuances.map((item, idx) => (
+                <tr key={idx} className="hover:bg-[#FDFBFA] transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] ${item.avatarBg} ${item.avatarText}`}>
+                        {item.initials}
+                      </div>
+                      <span className="font-medium text-[#1A1816]">{item.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-[#5C5854]">{item.course}</td>
+                  <td className="px-6 py-4 text-[#5C5854]">{item.date}</td>
+                  <td className="px-6 py-4 font-mono text-xs text-[#E07A25]">{item.txHash}</td>
+                  <td className="px-6 py-4">
+                    {item.status === 'VERIFIED' ? (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#FEF9C3] text-[#A16207] border border-[#FEF08A]">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        VERIFIED
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#F3F4F6] text-[#6B7280] border border-[#E5E7EB]">
+                        <History className="w-3 h-3 mr-1" />
+                        PENDING
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <button className="text-[#8B8276] hover:text-[#1A1816]">
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="px-6 py-4 border-t border-[#EAE3DC] flex items-center justify-between bg-[#FDFBFA] rounded-b-2xl">
+          <span className="text-xs text-[#8B8276] font-medium">Showing 4 of 12,548 certificates</span>
+          <div className="flex space-x-2">
+            <button className="w-8 h-8 flex items-center justify-center border border-[#EAE3DC] rounded-lg text-[#8B8276] hover:bg-white transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button className="w-8 h-8 flex items-center justify-center border border-[#EAE3DC] rounded-lg text-[#1A1816] hover:bg-white transition-colors">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Floating action button matching the image */}
+        <button className="absolute -bottom-5 -right-5 w-14 h-14 bg-[#E07A25] rounded-2xl flex items-center justify-center text-white shadow-lg hover:bg-[#C96B1E] transition-colors z-10 hidden md:flex">
+          <Plus className="w-6 h-6" />
+        </button>
+      </div>
+
+      <div className="mt-12 mb-8 bg-[#FDFBFA] border border-[#EAE3DC] rounded-2xl p-8 flex items-center justify-between">
+        <div className="max-w-xl">
+          <h3 className="text-xl font-bold text-[#994914] mb-2">Blockchain Secured</h3>
+          <p className="text-[#5C5854] text-sm leading-relaxed">
+            Every certificate issued through SkillChain is permanently recorded on the blockchain, ensuring your institution's credentials remain tamper-proof and verifiable worldwide.
+          </p>
+        </div>
+        <div className="w-24 h-24 rounded-full bg-[#F5F1EB] flex items-center justify-center relative overflow-hidden">
+           {/* Decorative geometric shapes inside circle */}
+           <div className="absolute inset-0 border-[6px] border-[#EAE3DC] rounded-full m-3 opacity-50"></div>
+           <div className="w-10 h-10 bg-[#EAE3DC] rotate-45 rounded-lg opacity-80"></div>
+        </div>
+      </div>
     </div>
   )
+}
+
+function CheckCircle(props) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+  );
+}
+
+function History(props) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+      <path d="M3 3v5h5"></path>
+      <path d="M12 7v5l4 2"></path>
+    </svg>
+  );
 }

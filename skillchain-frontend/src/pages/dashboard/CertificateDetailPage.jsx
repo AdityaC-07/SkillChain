@@ -60,7 +60,11 @@ function BlockchainExplorer({ txHash }) {
 
 export default function CertificateDetailPage(){
   const { id } = useParams()
-  const { data, isLoading } = useQuery(['cert', id], ()=> getCertificate(id).then(r=>r.data), { enabled: !!id })
+  const { data, isLoading } = useQuery({
+    queryKey: ['cert', id],
+    queryFn: () => getCertificate(id).then(r => r.data),
+    enabled: !!id,
+  })
 
   if (isLoading) return <SkeletonCard lines={6} className="max-w-3xl" />
   if (!data) return <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">Certificate not found.</div>

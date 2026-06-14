@@ -1,37 +1,67 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { Menu } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
 
-export default function Navbar({ onToggleSidebar=()=>{} }){
+export default function Navbar({ onToggleSidebar=()=>{} }) {
   const { t } = useTranslation()
   const auth = useAuth()
+  const location = useLocation()
 
   return (
-    <nav className="bg-cream border-b">
-      <a href="#main" className="sr-only focus:not-sr-only">Skip to content</a>
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <button aria-label="Open navigation" onClick={onToggleSidebar} className="md:hidden px-2 py-1">☰</button>
-          <Link to="/" className="font-heading text-xl text-navy-700">SKILLCHAIN</Link>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <Link to="/verify" className="text-navy-700">{t('nav.verify')}</Link>
-          <Link to="/about" className="text-navy-700">{t('nav.about')}</Link>
+    <header className="fixed top-0 right-0 left-0 lg:left-72 z-40 bg-[#FDFBFA]/90 backdrop-blur-md border-b border-[#EAE3DC] flex items-center justify-between py-4 px-6 lg:px-10 h-[80px]">
+      <div className="flex items-center">
+         <button aria-label="Open navigation" onClick={onToggleSidebar} className="lg:hidden mr-4 p-2 -ml-2 text-[#5C5854] hover:bg-[#EAE4DB] rounded-lg transition-colors">
+           <Menu className="w-6 h-6" />
+         </button>
+         <Link to="/" className="lg:hidden text-[22px] font-black tracking-tight text-[#994914]">
+           SKILLCHAIN
+         </Link>
+      </div>
+      <div className="flex items-center space-x-6 lg:space-x-8 ml-auto">
+        <nav className="hidden md:flex items-center space-x-6 text-[#5C5854] font-medium text-sm">
+          <Link 
+            to="/verify" 
+            className={`hover:text-[#994914] ${location.pathname === '/verify' ? 'border-b-2 border-[#994914] text-[#994914] pb-1' : ''}`}
+          >
+            Verify
+          </Link>
+          <Link 
+            to="/about" 
+            className={`hover:text-[#994914] ${location.pathname === '/about' ? 'border-b-2 border-[#994914] text-[#994914] pb-1' : ''}`}
+          >
+            About
+          </Link>
+          
           {!auth?.isAuthenticated ? (
-            <>
-              <Link to="/login" className="text-amber">{t('nav.login')}</Link>
-              <Link to="/register" className="bg-amber text-white px-3 py-1 rounded">{t('nav.home')}</Link>
-            </>
+            <Link 
+              to="/login" 
+              className={`hover:text-[#994914] ${location.pathname === '/login' ? 'border-b-2 border-[#994914] text-[#994914] pb-1' : ''}`}
+            >
+              Login
+            </Link>
           ) : (
             <>
-              <Link to={auth.role === 'institute' ? '/dashboard/institute' : '/dashboard/learner'} className="text-navy-700">{t('nav.dashboard')}</Link>
-              <button onClick={auth.logout} className="text-red-fraud">Logout</button>
+              <Link 
+                to={auth.role === 'institute' ? '/dashboard/institute' : '/dashboard/learner'} 
+                className={`hover:text-[#994914] ${location.pathname.startsWith('/dashboard') ? 'border-b-2 border-[#994914] text-[#994914] pb-1' : ''}`}
+              >
+                Dashboard
+              </Link>
+              <button onClick={auth.logout} className="hover:text-red-500 transition-colors">
+                Logout
+              </button>
             </>
           )}
-        </div>
+        </nav>
+        
+        {!auth?.isAuthenticated && (
+          <Link to="/register" className="bg-[#A0522D] text-white px-5 lg:px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-[#8B4513] transition-colors whitespace-nowrap">
+            Get Certified
+          </Link>
+        )}
       </div>
-    </nav>
+    </header>
   )
 }
