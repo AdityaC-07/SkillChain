@@ -17,29 +17,17 @@ export default function Sidebar({ isOpen=false, onClose=()=>{} }) {
   const location = useLocation()
   const auth = useAuth()
   
-  let navItems = []
-  
-  if (auth?.role === 'learner') {
-    navItems = [
-      { path: '/', label: 'Home', icon: Home },
-      { path: '/dashboard/learner', label: 'My Certificates', icon: FileBadge },
-      { path: '/verify', label: 'Verify', icon: ShieldCheck },
-      { path: '/fraud', label: 'Report Issue', icon: AlertTriangle },
-    ]
-  } else {
-    navItems = [
-      { path: '/', label: 'Home', icon: Home },
-      { path: '/dashboard/institute', label: 'Dashboard', icon: LayoutDashboard },
-      { path: '/certificates/issue', label: 'Issue', icon: FilePlus },
-      { path: '/verify', label: 'Verify', icon: ShieldCheck },
-      { path: '/fraud', label: 'Fraud', icon: AlertTriangle },
-    ]
-  }
+  const navItems = [
+    { path: '/', label: 'Home', icon: Home },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/certificates/issue', label: 'Issue', icon: FilePlus },
+    { path: '/verify', label: 'Verify', icon: ShieldCheck },
+    { path: '/fraud', label: 'Fraud', icon: AlertTriangle },
+  ]
 
   const isActive = (path) => {
     if (path === '/' && location.pathname !== '/') return false;
-    if (path === '/dashboard/institute' && location.pathname.startsWith('/dashboard/institute')) return true;
-    if (path === '/dashboard/learner' && location.pathname.startsWith('/dashboard/learner')) return true;
+    if (path === '/dashboard' && location.pathname.startsWith('/dashboard') && !location.pathname.startsWith('/dashboard/institute') && !location.pathname.startsWith('/dashboard/learner')) return true;
     if (path === '/certificates/issue' && location.pathname.startsWith('/certificates/issue')) return true;
     return location.pathname === path;
   }
@@ -66,10 +54,8 @@ export default function Sidebar({ isOpen=false, onClose=()=>{} }) {
             </div>
           )}
           <div>
-            <h2 className="text-[#994914] text-lg font-bold leading-tight">SkillChain Portal</h2>
-            <p className="text-[#8B8276] text-[11px] font-bold uppercase tracking-wider mt-0.5">
-              {isIssueActive ? 'ISSUE AUTHORITY' : (auth?.role === 'learner' ? 'Learner Portal' : 'Vocational Verification')}
-            </p>
+            <h2 className="text-[#994914] text-lg font-bold leading-tight">SkillChain</h2>
+            <p className="text-[#8B8276] text-[11px] font-bold uppercase tracking-wider mt-0.5">Demo Preview</p>
           </div>
         </div>
         

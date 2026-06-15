@@ -98,7 +98,7 @@ export default function InstituteDashboard() {
             Real-time vocational certificate monitoring on-chain.
           </p>
         </div>
-        <Link to="/certificates/issue" className="bg-[#A0522D] text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-[#8B4513] transition-colors flex items-center">
+        <Link to="/certificates/issue" className="bg-[#8B4513] text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-[#6B3410] transition-colors flex items-center">
           <Plus className="w-4 h-4 mr-1.5" />
           Issue New Certificate
         </Link>

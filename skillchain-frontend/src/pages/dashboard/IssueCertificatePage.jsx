@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import {
   FileText,
   Upload,
@@ -14,7 +15,9 @@ import {
   ChevronRight,
   ChevronLeft,
   FileCheck,
-  Check
+  Check,
+  PlayCircle,
+  RotateCcw
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 
@@ -25,7 +28,7 @@ export default function IssueCertificatePage() {
   // Prefilled Form Data
   const [learnerName, setLearnerName] = React.useState('Amit Verma')
   const [learnerEmail, setLearnerEmail] = React.useState('amit.verma@example.com')
-  const [learnerWallet, setLearnerWallet] = React.useState('0x8D3e2f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d4a')
+  const [learnerWallet, setLearnerWallet] = React.useState('0x8D3e2f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d4F721')
   
   const [courseName, setCourseName] = React.useState('Plumbing & Pipefitting — NSQF Level 3')
   const [institutionName] = React.useState('Govt ITI, Lucknow') // Read-only
@@ -124,9 +127,9 @@ export default function IssueCertificatePage() {
       <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-[#FFF4EA] rounded-full blur-[120px] -z-10 opacity-60"></div>
       
       {/* Demo Badge */}
-      <div className="mb-6 self-start flex items-center space-x-2 bg-[#FFF4EA] border border-[#E07A25] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#E07A25] shadow-sm animate-pulse">
-        <Link2 className="w-4 h-4" />
-        <span>Demo Mode — blockchain minting is simulated for this presentation</span>
+      <div className="mb-6 self-start flex items-center space-x-2 bg-[#FFF4EA] border border-[#C96B1E] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#C96B1E] shadow-sm animate-pulse">
+        <PlayCircle className="w-4 h-4" />
+        <span>Demo Mode — Try issuing a sample certificate. In production, this requires institute authentication.</span>
       </div>
 
       <div className="mb-10">
@@ -156,14 +159,14 @@ export default function IssueCertificatePage() {
                     isCompleted 
                       ? 'bg-green-600 border-2 border-green-600 text-white' 
                       : isActive 
-                        ? 'bg-[#A0522D] border-2 border-[#A0522D] text-white ring-4 ring-[#FFF4EA]' 
+                        ? 'bg-[#8B4513] border-2 border-[#8B4513] text-white ring-4 ring-[#FFF4EA]' 
                         : 'bg-white border-2 border-[#EAE3DC] text-[#8B8276]'
                   }`}
                 >
                   {isCompleted ? <Check className="w-5 h-5" strokeWidth={3} /> : item.step}
                 </div>
                 <span className={`text-[10px] font-bold uppercase tracking-wider mt-2 absolute top-10 whitespace-nowrap ${
-                  isActive ? 'text-[#A0522D]' : isCompleted ? 'text-green-700' : 'text-[#8B8276]'
+                  isActive ? 'text-[#8B4513]' : isCompleted ? 'text-green-700' : 'text-[#8B8276]'
                 }`}>
                   {item.label}
                 </span>
@@ -180,7 +183,7 @@ export default function IssueCertificatePage() {
           <div className="space-y-6 animate-fade-in">
             <div className="flex items-center space-x-3 mb-4">
               <div className="p-2 bg-[#FFF4EA] rounded-lg">
-                <User className="w-5 h-5 text-[#E07A25]" />
+                <User className="w-5 h-5 text-[#C96B1E]" />
               </div>
               <h2 className="text-xl font-extrabold text-[#1A1816]">Learner Details</h2>
             </div>
@@ -194,7 +197,7 @@ export default function IssueCertificatePage() {
                 value={learnerName}
                 onChange={(e) => setLearnerName(e.target.value)}
                 placeholder="As it appears on official identification" 
-                className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] placeholder-[#8B8276] bg-[#FDFBFA] focus:outline-none focus:border-[#E07A25] text-sm font-semibold shadow-inner"
+                className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] placeholder-[#8B8276] bg-[#FDFBFA] focus:outline-none focus:border-[#C96B1E] text-sm font-semibold shadow-inner"
               />
             </div>
 
@@ -207,7 +210,7 @@ export default function IssueCertificatePage() {
                 value={learnerEmail}
                 onChange={(e) => setLearnerEmail(e.target.value)}
                 placeholder="email@example.com" 
-                className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] placeholder-[#8B8276] bg-[#FDFBFA] focus:outline-none focus:border-[#E07A25] text-sm font-semibold shadow-inner"
+                className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] placeholder-[#8B8276] bg-[#FDFBFA] focus:outline-none focus:border-[#C96B1E] text-sm font-semibold shadow-inner"
               />
             </div>
 
@@ -220,14 +223,14 @@ export default function IssueCertificatePage() {
                 value={learnerWallet}
                 onChange={(e) => setLearnerWallet(e.target.value)}
                 placeholder="0x..." 
-                className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] placeholder-[#8B8276] bg-[#FDFBFA] focus:outline-none focus:border-[#E07A25] font-mono text-xs shadow-inner"
+                className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] placeholder-[#8B8276] bg-[#FDFBFA] focus:outline-none focus:border-[#C96B1E] font-mono text-xs shadow-inner"
               />
             </div>
 
             <div className="pt-4 flex justify-end">
               <button 
                 onClick={handleNext}
-                className="bg-[#A0522D] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#8B4513] transition-colors flex items-center space-x-2 cursor-pointer shadow-sm"
+                className="bg-[#8B4513] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#6B3410] transition-colors flex items-center space-x-2 cursor-pointer shadow-sm"
               >
                 <span>Next Step</span>
                 <ChevronRight className="w-4 h-4" />
@@ -255,7 +258,7 @@ export default function IssueCertificatePage() {
                 value={courseName}
                 onChange={(e) => setCourseName(e.target.value)}
                 placeholder="e.g. Electrician Level 4" 
-                className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] placeholder-[#8B8276] bg-[#FDFBFA] focus:outline-none focus:border-[#E07A25] text-sm font-semibold shadow-inner"
+                className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] placeholder-[#8B8276] bg-[#FDFBFA] focus:outline-none focus:border-[#C96B1E] text-sm font-semibold shadow-inner"
               />
             </div>
 
@@ -280,7 +283,7 @@ export default function IssueCertificatePage() {
                   type="date" 
                   value={completionDate}
                   onChange={(e) => setCompletionDate(e.target.value)}
-                  className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] bg-[#FDFBFA] focus:outline-none focus:border-[#E07A25] text-sm font-semibold shadow-inner"
+                  className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] bg-[#FDFBFA] focus:outline-none focus:border-[#C96B1E] text-sm font-semibold shadow-inner"
                 />
               </div>
             </div>
@@ -293,7 +296,7 @@ export default function IssueCertificatePage() {
                 <select 
                   value={grade} 
                   onChange={(e) => setGrade(e.target.value)}
-                  className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] bg-[#FDFBFA] focus:outline-none focus:border-[#E07A25] text-sm font-semibold shadow-inner"
+                  className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] bg-[#FDFBFA] focus:outline-none focus:border-[#C96B1E] text-sm font-semibold shadow-inner"
                 >
                   <option value="A">Grade A</option>
                   <option value="B">Grade B</option>
@@ -309,7 +312,7 @@ export default function IssueCertificatePage() {
                 <select 
                   value={nsqfLevel} 
                   onChange={(e) => setNsqfLevel(e.target.value)}
-                  className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] bg-[#FDFBFA] focus:outline-none focus:border-[#E07A25] text-sm font-semibold shadow-inner"
+                  className="w-full border border-[#EAE3DC] rounded-xl px-4 py-3.5 text-[#1A1816] bg-[#FDFBFA] focus:outline-none focus:border-[#C96B1E] text-sm font-semibold shadow-inner"
                 >
                   <option value="1">Level 1</option>
                   <option value="2">Level 2</option>
@@ -330,7 +333,7 @@ export default function IssueCertificatePage() {
               </button>
               <button 
                 onClick={handleNext}
-                className="bg-[#A0522D] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#8B4513] transition-colors flex items-center space-x-2 cursor-pointer shadow-sm"
+                className="bg-[#8B4513] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#6B3410] transition-colors flex items-center space-x-2 cursor-pointer shadow-sm"
               >
                 <span>Next Step</span>
                 <ChevronRight className="w-4 h-4" />
@@ -382,7 +385,7 @@ export default function IssueCertificatePage() {
               <label className="block text-xs font-bold text-[#8B8276] uppercase tracking-wider mb-2">
                 Supporting PDF / Proof
               </label>
-              <div className="border-2 border-dashed border-[#D2C8BC] hover:border-[#A0522D] rounded-2xl p-6 flex flex-col items-center justify-center bg-[#FDFBFA] cursor-pointer transition-colors relative">
+              <div className="border-2 border-dashed border-[#D2C8BC] hover:border-[#8B4513] rounded-2xl p-6 flex flex-col items-center justify-center bg-[#FDFBFA] cursor-pointer transition-colors relative">
                 {uploadedFile ? (
                   <div className="flex items-center space-x-3 w-full justify-center">
                     <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-700">
@@ -437,7 +440,7 @@ export default function IssueCertificatePage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-[#EAE3DC] rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6">
             <div className="flex items-center space-x-3 border-b border-[#EAE3DC] pb-4">
-              <Loader2 className="w-6 h-6 text-[#A0522D] animate-spin" />
+              <Loader2 className="w-6 h-6 text-[#8B4513] animate-spin" />
               <h3 className="text-lg font-extrabold text-[#1A1816]">Executing Blockchain Pipeline</h3>
             </div>
 
@@ -453,7 +456,7 @@ export default function IssueCertificatePage() {
                           <Check className="w-3.5 h-3.5 text-green-700" strokeWidth={3} />
                         </div>
                       ) : isActive ? (
-                        <Loader2 className="w-5 h-5 text-[#E07A25] animate-spin" />
+                        <Loader2 className="w-5 h-5 text-[#C96B1E] animate-spin" />
                       ) : (
                         <div className="w-5 h-5 rounded-full bg-[#F5F1EB] border border-[#EAE3DC]" />
                       )}
@@ -543,7 +546,7 @@ export default function IssueCertificatePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <button 
                 onClick={handleCopyLink}
-                className="bg-white border-2 border-[#EAE3DC] hover:border-[#A0522D] text-[#1A1816] px-4 py-3 rounded-xl font-bold transition-colors flex items-center justify-center space-x-2 cursor-pointer shadow-sm text-sm"
+                className="bg-white border-2 border-[#EAE3DC] hover:border-[#8B4513] text-[#1A1816] px-4 py-3 rounded-xl font-bold transition-colors flex items-center justify-center space-x-2 cursor-pointer shadow-sm text-sm"
               >
                 {copied ? (
                   <>
@@ -560,7 +563,7 @@ export default function IssueCertificatePage() {
 
               <button 
                 onClick={handleDownload}
-                className="bg-[#A0522D] text-white hover:bg-[#8B4513] px-4 py-3 rounded-xl font-bold transition-colors flex items-center justify-center space-x-2 cursor-pointer shadow-sm text-sm"
+                className="bg-[#8B4513] text-white hover:bg-[#6B3410] px-4 py-3 rounded-xl font-bold transition-colors flex items-center justify-center space-x-2 cursor-pointer shadow-sm text-sm"
               >
                 <Download className="w-4 h-4" />
                 <span>Download Proof</span>
@@ -574,6 +577,15 @@ export default function IssueCertificatePage() {
             >
               Issue Another Certificate
             </button>
+
+            <div className="text-center pt-1">
+              <Link
+                to={verifyUrl}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#8B4513] hover:text-[#6B3410] transition-colors"
+              >
+                Now try verifying this certificate <span className="text-base leading-none">→</span>
+              </Link>
+            </div>
           </div>
         </div>
       )}

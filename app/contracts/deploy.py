@@ -20,7 +20,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from solcx import compile_source, get_solc_version, install_solc, set_solc_version
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3.middleware import ExtraDataToPOAMiddleware
 from web3.exceptions import ContractCustomError, TransactionNotFound
 
 
@@ -112,7 +112,7 @@ def compile_contract(sol_path: Path):
 
 def deploy(abi, bytecode, rpc_url: str, private_key: str):
     w3 = Web3(Web3.HTTPProvider(rpc_url))
-    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
     if not w3.is_connected():
         raise ConnectionError("Unable to connect to RPC URL")
 

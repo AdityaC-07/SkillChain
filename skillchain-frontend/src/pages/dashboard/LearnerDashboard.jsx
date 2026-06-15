@@ -57,7 +57,7 @@ export default function LearnerDashboard() {
             <Filter className="w-4 h-4" />
             <span>Filter</span>
           </button>
-          <button className="flex items-center space-x-2 bg-[#A0522D] text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-[#8B4513] transition-colors shadow-sm">
+          <button className="flex items-center space-x-2 bg-[#8B4513] text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-[#6B3410] transition-colors shadow-sm">
             <Share2 className="w-4 h-4" />
             <span>Public Profile</span>
           </button>
@@ -66,7 +66,7 @@ export default function LearnerDashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
         <div className="bg-white border border-[#EAE3DC] rounded-2xl p-6 shadow-sm">
-          <Award className="w-6 h-6 text-[#A0522D] mb-4" strokeWidth={2} />
+          <Award className="w-6 h-6 text-[#8B4513] mb-4" strokeWidth={2} />
           <p className="text-3xl font-extrabold text-[#1A1816] mb-1">12</p>
           <p className="text-[#8B8276] text-sm">Active Certificates</p>
         </div>

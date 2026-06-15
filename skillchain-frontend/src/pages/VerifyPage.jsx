@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import {
   Fingerprint,
   Info,
@@ -121,7 +122,7 @@ export default function VerifyPage() {
       
       <div className="mb-12">
         <h1 className="text-5xl font-extrabold text-[#1A1816] leading-tight tracking-tight mb-4">
-          Validate <span className="text-[#A0522D]">Achievement.</span>
+          Validate <span className="text-[#8B4513]">Achievement.</span>
         </h1>
         <p className="text-[#5C5854] text-lg max-w-2xl leading-relaxed">
           Enter a certificate ID to instantly verify vocational credentials on the blockchain. 
@@ -144,7 +145,7 @@ export default function VerifyPage() {
               className="flex-1 bg-transparent border-none focus:outline-none py-4 text-[#1A1816] placeholder-[#8B8276]"
             />
           </div>
-          <button type="submit" className="bg-[#A0522D] text-white px-8 py-4 md:py-0 rounded-xl font-bold hover:bg-[#8B4513] transition-colors whitespace-nowrap">
+          <button type="submit" className="bg-[#8B4513] text-white px-8 py-4 md:py-0 rounded-xl font-bold hover:bg-[#8B4513] transition-colors whitespace-nowrap">
             Verify Now
           </button>
         </form>
@@ -169,7 +170,7 @@ export default function VerifyPage() {
       <div className="mb-20">
         {loading && (
           <div className="border border-[#EAE3DC] bg-white rounded-3xl p-12 flex flex-col items-center justify-center min-h-[240px] shadow-sm animate-fade-in">
-            <Loader2 className="w-10 h-10 text-[#A0522D] animate-spin mb-4" />
+            <Loader2 className="w-10 h-10 text-[#8B4513] animate-spin mb-4" />
             <p className="text-[#1A1816] font-bold text-lg animate-pulse">Checking blockchain ledger...</p>
             <p className="text-xs text-[#8B8276] mt-2">Querying decentralized smart contract state</p>
           </div>
@@ -286,6 +287,15 @@ export default function VerifyPage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="text-center mt-4">
+              <Link
+                to="/fraud"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#8B4513] hover:text-[#8B4513] transition-colors"
+              >
+                Suspicious? Run a fraud scan <span className="text-base leading-none">→</span>
+              </Link>
             </div>
           </div>
         )}

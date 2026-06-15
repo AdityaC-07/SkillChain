@@ -22,7 +22,7 @@ const HOW_IT_WORKS_STEPS = [
     title: "Institute Login",
     desc: "Verified institutions log in to issue credentials",
     bgColor: "bg-[#FFF4EA]",
-    iconColor: "text-[#E07A25]"
+    iconColor: "text-[#C96B1E]"
   },
   {
     icon: CloudUpload,
@@ -36,7 +36,7 @@ const HOW_IT_WORKS_STEPS = [
     title: "Blockchain Minting",
     desc: "Certificate minted as NFT on Polygon",
     bgColor: "bg-[#FFF4EA]",
-    iconColor: "text-[#E07A25]"
+    iconColor: "text-[#C96B1E]"
   },
   {
     icon: QrCode,
@@ -122,16 +122,16 @@ export default function LandingPage() {
         <div>
           <h1 className="text-5xl font-extrabold text-[#1A1816] leading-tight tracking-tight mb-4">
             Your Skills.<br/>
-            <span className="text-[#E07A25]">Verified</span> Forever.
+            <span className="text-[#C96B1E]">Verified</span> Forever.
           </h1>
           <p className="text-[#5C5854] text-lg mb-8 max-w-md leading-relaxed">
             Issue blockchain-backed vocational certificates that build trust in your skills and future. Modern education meets permanent security.
           </p>
           <div className="flex items-center space-x-4">
-            <Link to="/register" className="bg-[#E07A25] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#C96B1E] transition-colors">
+            <Link to="/register" className="bg-[#C96B1E] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#A0522D] transition-colors">
               Get Certified
             </Link>
-            <Link to="/verify" className="border-2 border-[#E07A25] text-[#1A1816] px-6 py-3 rounded-xl font-bold hover:bg-[#FFF4EA] transition-colors">
+            <Link to="/verify" className="border-2 border-[#C96B1E] text-[#1A1816] px-6 py-3 rounded-xl font-bold hover:bg-[#FFF4EA] transition-colors">
               Verify Now
             </Link>
           </div>
@@ -145,7 +145,7 @@ export default function LandingPage() {
               <p className="text-3xl font-extrabold text-[#1A1816]">12,548</p>
             </div>
             <div className="bg-[#FFF4EA] p-3 rounded-full">
-              <BadgeCheck className="w-6 h-6 text-[#E07A25]" strokeWidth={1.5} />
+              <BadgeCheck className="w-6 h-6 text-[#C96B1E]" strokeWidth={1.5} />
             </div>
           </div>
 
