@@ -10,6 +10,17 @@ export const AuthProvider = ({ children }) =>{
 
   useEffect(()=>{
     async function load(){
+      if (localStorage.getItem('demoMode') === 'true') {
+        setUser({
+          id: 1,
+          name: 'Govt ITI, Lucknow',
+          email: 'lucknow@gov.iti',
+          role: 'institute'
+        })
+        setToken('demo-token')
+        setLoading(false)
+        return
+      }
       if (token){
         try{
           const { data } = await authAPI.get('/api/auth/me')
@@ -33,6 +44,8 @@ export const AuthProvider = ({ children }) =>{
 
   const logout = ()=>{
     localStorage.removeItem('token')
+    localStorage.removeItem('demoMode')
+    localStorage.removeItem('demoFormData')
     setToken(null)
     setUser(null)
     window.location.href = '/login'

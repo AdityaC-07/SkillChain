@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Plus
 } from 'lucide-react'
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
 
 export default function InstituteDashboard() {
   const recentIssuances = [
@@ -56,6 +57,35 @@ export default function InstituteDashboard() {
       avatarText: 'text-[#4F6C8A]'
     }
   ]
+
+  const monthlyData = [
+    { month: 'Jan', count: 28 },
+    { month: 'Feb', count: 35 },
+    { month: 'Mar', count: 41 },
+    { month: 'Apr', count: 38 },
+    { month: 'May', count: 52 },
+    { month: 'Jun', count: 53 },
+  ];
+
+  const gradeData = [
+    { name: 'A', value: 142 },
+    { name: 'B', value: 78 },
+    { name: 'C', value: 21 },
+    { name: 'D', value: 6 },
+  ];
+
+  const topCoursesData = [
+    { name: 'Welding Technology NSQF L4', value: 67 },
+    { name: 'Electrical Wiring NSQF L3', value: 54 },
+    { name: 'Computer Basics NSQF L2', value: 49 },
+    { name: 'Plumbing & Pipefitting NSQF L3', value: 38 },
+    { name: 'Solar Panel Installation NSQF L4', value: 31 },
+  ];
+
+  const pendingConfirmations = [
+    { learner: 'Amit Verma', id: '1042', status: 'Minting' },
+    { learner: 'Priya Sharma', id: '2045', status: 'Minting' },
+  ];
 
   return (
     <div className="flex-1 flex flex-col pt-4 relative">
@@ -119,6 +149,64 @@ export default function InstituteDashboard() {
           <p className="text-3xl font-extrabold text-[#1A1816]">0</p>
         </div>
       </div>
+        {/* Analytics Charts Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Monthly Issuance Bar Chart */}
+          <div className="bg-white border border-[#EAE3DC] rounded-2xl p-5 shadow-sm">
+            <h3 className="text-lg font-bold text-[#1A1816] mb-4">Monthly Issuance</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={monthlyData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" stroke="#5C5854" />
+                <YAxis stroke="#5C5854" />
+                <Tooltip />
+                <Bar dataKey="count" fill="#E07A25" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Grade Distribution Donut Chart */}
+          <div className="bg-white border border-[#EAE3DC] rounded-2xl p-5 shadow-sm flex flex-col items-center">
+            <h3 className="text-lg font-bold text-[#1A1816] mb-4">Grade Distribution</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={gradeData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} label>
+                  {gradeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={['#4F6C8A', '#A0522D', '#E07A25', '#DC2626'][index % 4]} />
+                  ))}
+                </Pie>
+                <Legend verticalAlign="bottom" height={36} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        {/* Top Courses Horizontal Bar Chart */}
+        <div className="bg-white border border-[#EAE3DC] rounded-2xl p-5 shadow-sm mb-8">
+          <h3 className="text-lg font-bold text-[#1A1816] mb-4">Top Courses Issued</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart layout="vertical" data={topCoursesData} margin={{ top: 20, right: 30, left: 100, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" stroke="#5C5854" />
+              <YAxis dataKey="name" type="category" stroke="#5C5854" />
+              <Tooltip />
+              <Bar dataKey="value" fill="#4F6C8A" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        {/* Pending Blockchain Confirmations Widget */}
+        <div className="bg-white border border-[#EAE3DC] rounded-2xl p-5 shadow-sm mb-8">
+          <h3 className="text-lg font-bold text-[#1A1816] mb-4">Pending Blockchain Confirmations</h3>
+          <ul className="divide-y divide-[#EAE3DC]">
+            {pendingConfirmations.map((item, idx) => (
+              <li key={idx} className="flex justify-between items-center py-2">
+                <span className="font-medium text-[#1A1816]">{item.learner}</span>
+                <span className="text-sm text-[#8B8276]">Token ID: {item.id}</span>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#FEF9C3] text-[#A16207] border border-[#FEF08A]">
+                  {item.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
       <div className="bg-white border border-[#EAE3DC] rounded-2xl shadow-sm relative">
         <div className="p-6 border-b border-[#EAE3DC] flex flex-col md:flex-row md:items-center justify-between gap-4">

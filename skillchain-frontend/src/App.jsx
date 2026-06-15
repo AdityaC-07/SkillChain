@@ -27,7 +27,6 @@ function OfflineBanner(){
 }
 
 function DemoRedirect() {
-  const navigate = useNavigate()
   React.useEffect(() => {
     // Store demo data in localStorage
     const demoData = {
@@ -40,8 +39,11 @@ function DemoRedirect() {
     }
     localStorage.setItem('demoFormData', JSON.stringify(demoData))
     localStorage.setItem('demoMode', 'true')
-    navigate('/certificates/issue')
-  }, [navigate])
+    localStorage.setItem('token', 'demo-token')
+    
+    // Force a reload to certificates/issue so AuthProvider intercepts local storage change
+    window.location.href = '/certificates/issue'
+  }, [])
   return null
 }
 

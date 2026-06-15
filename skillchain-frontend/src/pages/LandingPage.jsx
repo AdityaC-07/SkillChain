@@ -6,15 +6,65 @@ import {
   Landmark,
   ShieldAlert,
   LogIn,
-  Cloud,
+  CloudUpload,
   Link as LinkIcon,
   QrCode,
-  CheckCircle,
-  History,
+  ShieldCheck,
+  ArrowRight,
   Database,
   Network,
   Library
 } from 'lucide-react'
+
+const HOW_IT_WORKS_STEPS = [
+  {
+    icon: LogIn,
+    title: "Institute Login",
+    desc: "Verified institutions log in to issue credentials",
+    bgColor: "bg-[#FFF4EA]",
+    iconColor: "text-[#E07A25]"
+  },
+  {
+    icon: CloudUpload,
+    title: "Secure Storage",
+    desc: "Certificate stored permanently on IPFS",
+    bgColor: "bg-[#EAF0F6]",
+    iconColor: "text-[#4F6C8A]"
+  },
+  {
+    icon: LinkIcon,
+    title: "Blockchain Minting",
+    desc: "Certificate minted as NFT on Polygon",
+    bgColor: "bg-[#FFF4EA]",
+    iconColor: "text-[#E07A25]"
+  },
+  {
+    icon: QrCode,
+    title: "QR Generation",
+    desc: "Unique QR code generated for the learner",
+    bgColor: "bg-[#EAF0F6]",
+    iconColor: "text-[#4F6C8A]"
+  },
+  {
+    icon: ShieldCheck,
+    title: "Instant Verification",
+    desc: "Anyone scans QR for instant on-chain proof",
+    bgColor: "bg-[#F2F4E6]",
+    iconColor: "text-[#6B7240]"
+  }
+];
+
+const ACTIVITY_POOL = [
+  { action: "Welding NSQF L4 certificate issued", detail: "Govt ITI Delhi" },
+  { action: "Certificate verified by employer", detail: "TVS Motors HR" },
+  { action: "Electrical Wiring L3 certificate issued", detail: "ITI Pune" },
+  { action: "Fraud scan completed — GENUINE (94%)", detail: "Verification Portal" },
+  { action: "Solar Panel Installation L4 issued", detail: "NSDC Bangalore Center" },
+  { action: "Automotive Service Tech certificate issued", detail: "Govt ITI Mumbai" },
+  { action: "Plumbing Level 2 certificate verified", detail: "L&T Construction" },
+  { action: "Fraud scan completed — GENUINE (97%)", detail: "Verification Portal" },
+  { action: "Data Entry Operator certificate issued", detail: "ITI Bangalore" }
+];
 
 export default function LandingPage() {
   const [verifIdx, setVerifIdx] = React.useState(0);
@@ -29,6 +79,40 @@ export default function LandingPage() {
     const timer = setInterval(() => {
       setVerifIdx((prev) => (prev + 1) % verifications.length);
     }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const [feed, setFeed] = React.useState([
+    { ...ACTIVITY_POOL[0], minutesAgo: 2, id: 1 },
+    { ...ACTIVITY_POOL[1], minutesAgo: 5, id: 2 },
+    { ...ACTIVITY_POOL[2], minutesAgo: 12, id: 3 },
+    { ...ACTIVITY_POOL[3], minutesAgo: 18, id: 4 },
+    { ...ACTIVITY_POOL[4], minutesAgo: 25, id: 5 },
+  ]);
+  const poolRef = React.useRef(5);
+  const idRef = React.useRef(6);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setFeed((prevFeed) => {
+        const agedFeed = prevFeed.map(item => ({
+          ...item,
+          minutesAgo: item.minutesAgo + Math.max(1, Math.floor(Math.random() * 2))
+        }));
+
+        const nextItem = ACTIVITY_POOL[poolRef.current];
+        poolRef.current = (poolRef.current + 1) % ACTIVITY_POOL.length;
+
+        const newItem = {
+          ...nextItem,
+          minutesAgo: 0,
+          id: idRef.current
+        };
+        idRef.current += 1;
+
+        return [newItem, ...agedFeed.slice(0, 4)];
+      });
+    }, 10000);
     return () => clearInterval(timer);
   }, []);
 
@@ -52,16 +136,6 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          <div className="mt-16">
-            <p className="text-[11px] font-bold text-[#8B8276] uppercase tracking-widest mb-4">Trusted by vocational institutes across India</p>
-            <div className="flex flex-wrap gap-3">
-              {['NSDC', 'ITI Network', 'Skill India Digital', 'NCVET'].map(name => (
-                <span key={name} className="px-4 py-2 bg-white border border-[#EAE3DC] rounded-lg text-xs font-bold text-[#8B8276] grayscale hover:grayscale-0 hover:text-[#1A1816] hover:border-[#D2C8BC] transition-all cursor-default shadow-sm">
-                  {name}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4">
@@ -127,28 +201,40 @@ export default function LandingPage() {
       <div className="py-16 md:py-24 border-t border-[#EAE3DC] mt-16">
         <div className="flex items-center space-x-3 mb-10">
           <div className="w-2.5 h-2.5 rounded-full bg-[#E07A25]"></div>
-          <h2 className="text-2xl font-bold text-[#1A1816]">How it works</h2>
+          <h2 className="text-2xl font-bold text-[#1A1816]">How It Works</h2>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-          {[
-            { icon: LogIn, title: 'Log In', desc: 'Access your secure account' },
-            { icon: Cloud, title: 'Upload', desc: 'Securely store your data' },
-            { icon: LinkIcon, title: 'Link', desc: 'Issue on blockchain' },
-            { icon: QrCode, title: 'Generate QR', desc: 'Scan to share instantly' },
-            { icon: CheckCircle, title: 'Verify', desc: 'Anyone can verify anywhere' }
-          ].map((step, idx) => {
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 lg:gap-2 xl:gap-4">
+          {HOW_IT_WORKS_STEPS.map((step, idx) => {
             const Icon = step.icon;
             return (
-              <div key={idx} className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-white border border-[#EAE3DC] rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-                  <Icon className="w-6 h-6 text-[#E07A25]" strokeWidth={1.5} />
+              <React.Fragment key={idx}>
+                <div className="w-full lg:flex-1 bg-white border border-[#EAE3DC] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col items-start min-h-[190px]">
+                  <div className={`${step.bgColor} p-3 rounded-full mb-4`}>
+                    <Icon className={`w-6 h-6 ${step.iconColor}`} strokeWidth={1.5} />
+                  </div>
+                  <h3 className="font-extrabold text-[#1A1816] text-base mb-1">{step.title}</h3>
+                  <p className="text-xs text-[#5C5854] leading-relaxed">{step.desc}</p>
                 </div>
-                <h3 className="font-bold text-[#1A1816] text-sm mb-1">{step.title}</h3>
-                <p className="text-[11px] text-[#8B8276] max-w-[100px] leading-tight">{step.desc}</p>
-              </div>
+                {idx < HOW_IT_WORKS_STEPS.length - 1 && (
+                  <div className="flex lg:flex items-center justify-center text-[#D2C8BC] py-2 lg:py-0">
+                    <ArrowRight className="w-5 h-5 rotate-90 lg:rotate-0" strokeWidth={2} />
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
+        </div>
+      </div>
+
+      <div className="py-12 border-t border-[#EAE3DC] flex flex-col items-center">
+        <p className="text-[11px] font-bold text-[#8B8276] uppercase tracking-widest mb-6">Trusted by vocational institutes across India</p>
+        <div className="flex flex-wrap justify-center gap-4">
+          {['NSDC', 'ITI Network', 'Skill India Digital', 'NCVET'].map(name => (
+            <span key={name} className="px-6 py-3 bg-white border border-[#EAE3DC] rounded-xl text-sm font-bold text-[#8B8276] grayscale hover:grayscale-0 hover:text-[#1A1816] hover:border-[#D2C8BC] transition-all cursor-default shadow-sm">
+              {name}
+            </span>
+          ))}
         </div>
       </div>
 
@@ -190,11 +276,32 @@ export default function LandingPage() {
           <div className="w-2.5 h-2.5 rounded-full bg-[#994914]"></div>
           <h2 className="text-2xl font-bold text-[#1A1816]">Live Activity</h2>
         </div>
-        <div className="bg-[#F5F1EB] border border-[#EAE3DC] rounded-2xl h-40 flex flex-col items-center justify-center shadow-inner">
-          <History className="w-8 h-8 text-[#8B8276] mb-3" strokeWidth={1.5} />
-          <h3 className="font-bold text-[#1A1816]">No recent activity</h3>
-          <p className="text-xs text-[#8B8276] mt-1">Updates every 10 seconds</p>
+
+        <div className="bg-white border border-[#EAE3DC] rounded-2xl shadow-sm divide-y divide-[#EAE3DC] overflow-hidden">
+          {feed.map((item) => (
+            <div key={item.id} className="p-4 flex items-start sm:items-center justify-between hover:bg-[#FDFBFA] transition-colors animate-fade-in">
+              <div className="flex items-start sm:items-center">
+                <span className="relative flex h-2.5 w-2.5 mr-3 mt-1.5 sm:mt-0 flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                </span>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
+                  <span className="text-sm font-bold text-[#1A1816]">{item.action}</span>
+                  <span className="hidden sm:inline text-[#D2C8BC]">•</span>
+                  <span className="text-xs text-[#5C5854] font-medium">{item.detail}</span>
+                </div>
+              </div>
+              <span className="text-xs font-semibold text-[#8B8276] whitespace-nowrap ml-4">
+                {item.minutesAgo === 0 ? "Just now" : `${item.minutesAgo} min ago`}
+              </span>
+            </div>
+          ))}
         </div>
+
+        <p className="text-center text-xs text-[#8B8276] mt-4 font-semibold flex items-center justify-center space-x-1.5 animate-pulse">
+          <span>•</span>
+          <span>Updates every 10 seconds</span>
+        </p>
       </div>
     </div>
   )
