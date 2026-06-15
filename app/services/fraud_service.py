@@ -301,8 +301,6 @@ The public model is not trained on forged certificates; this is a demo hook
 where we use the top prediction confidence as a simple anomaly-style score.
 """
 
-from __future__ import annotations
-
 import asyncio
 from io import BytesIO
 from typing import Any

@@ -41,6 +41,7 @@ class BlockchainService:
         This constructor performs only lightweight synchronous operations. Heavy
         network actions are executed in the async methods via `to_thread`.
         """
+        self.disabled = False
         # Connect to Polygon Mumbai via RPC URL from settings
         self.rpc = settings.POLYGON_RPC_URL
         self.w3 = Web3(Web3.HTTPProvider(self.rpc))
@@ -60,13 +61,21 @@ class BlockchainService:
                 pass
 
         if not contract_address or not contract_abi:
-            raise ValueError("Contract address and ABI must be configured (deployed.json or settings).")
+            # Allow running without contract for development/testing
+            self.contract = None
+            self.private_key = None
+            self.account = None
+            self.disabled = True
+            return
 
         self.contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=contract_abi)
 
         # Load institute wallet from PRIVATE_KEY in settings
         if not settings.PRIVATE_KEY:
-            raise ValueError("PRIVATE_KEY is not set in settings/.env")
+            self.private_key = None
+            self.account = None
+            self.disabled = True
+            return
         key = settings.PRIVATE_KEY.strip()
         if key.startswith("0x"):
             key = key[2:]
@@ -209,6 +218,10 @@ class BlockchainService:
     async def is_valid_address(self, address: str) -> bool:
         """Validate an Ethereum address format (checksum or non-checksum)."""
         return Web3.is_address(address)
+
+    def chain_ready(self) -> bool:
+        """Check if blockchain service is ready (has contract configured)."""
+        return not self.disabled
 
 
 # Create singleton instance

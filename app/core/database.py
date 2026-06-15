@@ -17,9 +17,8 @@ async def init_db() -> None:
     """Connect to MongoDB and register Beanie document models."""
     global _client
     _client = AsyncIOMotorClient(settings.MONGODB_URI)
-    db = _client.get_default_database()
     await init_beanie(
-        database=db,
+        connection_string=settings.MONGODB_URI,
         document_models=[User, Certificate, AuditLog, FraudAlert, DigiLockerSync],
     )
 

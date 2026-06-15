@@ -53,9 +53,25 @@ def compile_contract(sol_path: Path):
         raise RuntimeError(f"Failed to install or set solc: {e}")
 
     source = sol_path.read_text(encoding="utf-8")
+    project_root = ROOT.parent.parent
+    openzeppelin_path = project_root / "node_modules" / "@openzeppelin"
+
+    import_remappings = []
+    allow_paths = [str(project_root)]
+    if openzeppelin_path.is_dir():
+        import_remappings = ["@openzeppelin/=node_modules/@openzeppelin/"]
+        allow_paths.append(str(project_root / "node_modules"))
+    else:
+        raise RuntimeError("OpenZeppelin contracts not found. Run `npm install @openzeppelin/contracts` in the project root.")
 
     try:
-        compiled = compile_source(source, output_values=["abi", "bin"])  # returns dict
+        compiled = compile_source(
+            source,
+            output_values=["abi", "bin"],
+            base_path=str(project_root),
+            allow_paths=allow_paths,
+            import_remappings=import_remappings,
+        )  # returns dict
     except Exception as e:
         raise RuntimeError(f"Solidity compilation failed: {e}")
 
