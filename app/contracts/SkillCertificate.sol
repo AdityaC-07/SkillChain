@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Pausable.sol";
 
 /**
  * @title SkillCertificate
  * @dev ERC-721 tokens representing vocational certificates issued by authorized institutes.
  * Inherits from OpenZeppelin's `ERC721URIStorage`, `Ownable`, and `Pausable`.
  */
-contract SkillCertificate is ERC721URIStorage, Ownable, Pausable {
+contract SkillCertificate is ERC721URIStorage, ERC721Pausable, Ownable {
     /// @notice Auto-incrementing token id counter (total ever minted)
     uint256 private _tokenIdCounter;
 
@@ -44,7 +44,7 @@ contract SkillCertificate is ERC721URIStorage, Ownable, Pausable {
     /**
      * @dev Constructor sets token `name` and `symbol`.
      */
-    constructor() ERC721("SkillChain Certificate", "SKIL") {}
+    constructor() ERC721("SkillChain Certificate", "SKIL") Ownable(msg.sender) {}
 
     /**
      * @notice Authorize an address to mint certificates.
@@ -70,22 +70,22 @@ contract SkillCertificate is ERC721URIStorage, Ownable, Pausable {
      * @notice Mint a certificate NFT to `to` with `tokenURI` metadata.
      * @dev Can only be called by an authorized issuer and when contract is not paused.
      *      Records the issuer and emits `CertificateIssued` with a timestamp.
-     * @param to Recipient address that will own the certificate token.
-     * @param tokenURI The metadata URI for the certificate (IPFS/HTTP).
+    * @param to Recipient address that will own the certificate token.
+    * @param uri The metadata URI for the certificate (IPFS/HTTP).
      * @return tokenId The newly minted token id.
      */
-    function mintCertificate(address to, string memory tokenURI) external whenNotPaused returns (uint256) {
+    function mintCertificate(address to, string memory uri) external whenNotPaused returns (uint256) {
         require(authorizedIssuers[msg.sender], "SkillCertificate: caller is not an authorized issuer");
 
         _tokenIdCounter += 1;
         uint256 tokenId = _tokenIdCounter;
 
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, tokenURI);
+        _setTokenURI(tokenId, uri);
 
         issuedBy[tokenId] = msg.sender;
 
-        emit CertificateIssued(tokenId, to, msg.sender, tokenURI, block.timestamp);
+        emit CertificateIssued(tokenId, to, msg.sender, uri, block.timestamp);
 
         return tokenId;
     }
@@ -104,7 +104,7 @@ contract SkillCertificate is ERC721URIStorage, Ownable, Pausable {
         view
         returns (string memory uri, address owner, address issuer, bool isRevoked)
     {
-        if (!_exists(tokenId)) {
+        if (_ownerOf(tokenId) == address(0)) {
             return ("", address(0), address(0), false);
         }
 
@@ -120,7 +120,7 @@ contract SkillCertificate is ERC721URIStorage, Ownable, Pausable {
      * @param tokenId The token id to revoke.
      */
     function revokeCertificate(uint256 tokenId) external {
-        require(_exists(tokenId), "SkillCertificate: token does not exist");
+        require(_ownerOf(tokenId) != address(0), "SkillCertificate: token does not exist");
 
         address issuer = issuedBy[tokenId];
         address ownerAddr = ownerOf(tokenId);
@@ -157,20 +157,18 @@ contract SkillCertificate is ERC721URIStorage, Ownable, Pausable {
         return _tokenIdCounter;
     }
 
-    /**
-     * @dev Overrides `_beforeTokenTransfer` to respect the paused state.
-     */
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override {
-        super._beforeTokenTransfer(from, to, tokenId);
-        require(!paused(), "SkillCertificate: token transfer while paused");
+    /// @notice ABI / interface compatibility overrides for multiple inheritance (OpenZeppelin v5)
+    function _update(address to, uint256 tokenId, address auth) internal virtual override(ERC721, ERC721Pausable) returns (address) {
+        return super._update(to, tokenId, auth);
     }
 
-    // The following functions are overrides required by Solidity for multiple inheritance.
-    function _burn(uint256 tokenId) internal virtual override(ERC721URIStorage) {
-        super._burn(tokenId);
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721URIStorage, ERC721) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 
-    function tokenURI(uint256 tokenId) public view virtual override(ERC721URIStorage) returns (string memory) {
+    function tokenURI(uint256 tokenId) public view virtual override(ERC721URIStorage, ERC721) returns (string memory) {
         return super.tokenURI(tokenId);
     }
+
+    // No manual transfer hook overrides required; ERC721Pausable enforces pause via `_update`.
 }

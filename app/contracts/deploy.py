@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from solcx import compile_source, install_solc, set_solc_version
+from solcx import compile_source, get_solc_version, install_solc, set_solc_version
 from web3 import Web3
 from web3.exceptions import ContractCustomError, TransactionNotFound
 
@@ -36,33 +36,43 @@ def load_env():
     if not rpc:
         print("Error: POLYGON_RPC_URL not set in environment or .env")
         sys.exit(1)
-    if not private_key:
-        print("Error: PRIVATE_KEY not set in environment or .env")
-        sys.exit(1)
     return rpc, private_key
+
+
+def get_openzeppelin_version(project_root: Path) -> str:
+    pkg_path = project_root / "node_modules" / "@openzeppelin" / "contracts" / "package.json"
+    if pkg_path.is_file():
+        try:
+            data = json.loads(pkg_path.read_text(encoding="utf-8"))
+            return data.get("version", "unknown")
+        except Exception:
+            return "unknown"
+    return "not installed"
 
 
 def compile_contract(sol_path: Path):
     if not sol_path.is_file():
         raise FileNotFoundError(f"Contract source not found: {sol_path}")
 
+    project_root = ROOT.parent.parent
+    openzeppelin_path = project_root / "node_modules" / "@openzeppelin"
+    openzeppelin_version = get_openzeppelin_version(project_root)
+
     try:
-        install_solc("0.8.20")
-        set_solc_version("0.8.20")
+        install_solc("0.8.35")
+        set_solc_version("0.8.35")
     except Exception as e:
         raise RuntimeError(f"Failed to install or set solc: {e}")
 
     source = sol_path.read_text(encoding="utf-8")
-    project_root = ROOT.parent.parent
-    openzeppelin_path = project_root / "node_modules" / "@openzeppelin"
 
-    import_remappings = []
-    allow_paths = [str(project_root)]
-    if openzeppelin_path.is_dir():
-        import_remappings = ["@openzeppelin/=node_modules/@openzeppelin/"]
-        allow_paths.append(str(project_root / "node_modules"))
-    else:
-        raise RuntimeError("OpenZeppelin contracts not found. Run `npm install @openzeppelin/contracts` in the project root.")
+    if not openzeppelin_path.is_dir():
+        raise RuntimeError(
+            "OpenZeppelin contracts not found. Run `npm install @openzeppelin/contracts` in the project root."
+        )
+
+    import_remappings = ["@openzeppelin/=node_modules/@openzeppelin/"]
+    allow_paths = [str(project_root), str(project_root / "node_modules")]
 
     try:
         compiled = compile_source(
@@ -73,7 +83,12 @@ def compile_contract(sol_path: Path):
             import_remappings=import_remappings,
         )  # returns dict
     except Exception as e:
-        raise RuntimeError(f"Solidity compilation failed: {e}")
+        solc_version = get_solc_version() if get_solc_version() else "unknown"
+        raise RuntimeError(
+            f"Solidity compilation failed: {e}\n"
+            f"OpenZeppelin version: {openzeppelin_version}\n"
+            f"Solc version: {solc_version}"
+        )
 
     # compile_source returns a dict keyed by '<stdin>:ContractName'
     contract_key = None
@@ -162,6 +177,11 @@ def main():
 
         print("Compiling contract...")
         abi, bytecode = compile_contract(CONTRACT_PATH)
+
+        if not private_key:
+            print("Compilation successful, skipping deployment — no PRIVATE_KEY set")
+            ABI_JSON.write_text(json.dumps(abi, indent=2), encoding="utf-8")
+            return
 
         print("Deploying contract to RPC:", rpc_url)
         deployed = deploy(abi, bytecode, rpc_url, private_key)
